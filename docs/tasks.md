@@ -33,7 +33,7 @@ dotnet test --filter "FullyQualifiedName~ИМЯ_ТЕСТОВ"
 
 ## У-1а. Проверка путей
 
-**Статус:** к работе
+**Статус:** принято (2026-10-23, коммит a37dff0). Claude проверил: тесты не тронуты, 53 из 53, сборка без предупреждений. Хорошо: проверка разделителя после папки игры, регистр по ОС.
 
 - Файл: `src/L2Updater.Core/PathGuard.cs`, два метода: `IsValidRelativePath` и `Resolve`.
 - Тесты: `dotnet test --filter "FullyQualifiedName~PathGuardTests"` (должно быть Passed: 53).
@@ -42,7 +42,7 @@ dotnet test --filter "FullyQualifiedName~ИМЯ_ТЕСТОВ"
 
 ## У-1б. Проверка подписи
 
-**Статус:** после принятия У-1а
+**Статус:** к работе
 
 - Файл: `src/L2Updater.Core/SignatureVerifier.cs`: конструктор, `KeyIdOf`, `Verify`.
 - Тесты: `dotnet test --filter "FullyQualifiedName~SignatureVerifierTests"` (Passed: 11).
