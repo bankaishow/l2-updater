@@ -91,7 +91,7 @@ dotnet test --filter "FullyQualifiedName~ИМЯ_ТЕСТОВ"
 
 ## У-3а. Настройки и запуск игры
 
-**Статус:** к работе
+**Статус:** принято (2026-10-23, коммит 9440605). Claude проверил: тесты не тронуты, 28 из 28 (всего зелёных 241), сборка без предупреждений. Хорошо: снятие «только для чтения» с updater.ini перед заменой (сам догадался).
 
 - Файлы: `src/L2Updater.Core/UpdaterSettings.cs` (`Load`, `Save`, `ChooseFolder`) и `src/L2Updater.Core/GameLauncher.cs` (`BuildStartInfo`, `IsUnderProgramFiles`). Можно добавлять свои `private` методы.
 - Тесты: `dotnet test --filter "FullyQualifiedName~UpdaterSettingsTests|FullyQualifiedName~GameLauncherTests"` (Passed: 28). Всего: `dotnet test` → Passed: 241, Failed: 61 (это тесты У-3б и У-3в).
@@ -100,7 +100,7 @@ dotnet test --filter "FullyQualifiedName~ИМЯ_ТЕСТОВ"
 
 ## У-3б. Новости, статус серверов, прогресс
 
-**Статус:** после принятия У-3а
+**Статус:** к работе
 
 - Файлы: `src/L2Updater.Core/NewsFeed.cs` (`ParseNews`, `ParseStatus`, `Clean`) и `src/L2Updater.Core/ProgressTracker.cs` (`Report`, `Percent`, `BytesPerSecond`, `Remaining`, `FormatBytes`). Можно добавлять свои `private` поля и методы.
 - Тесты: `dotnet test --filter "FullyQualifiedName~NewsFeedTests|FullyQualifiedName~ProgressTrackerTests"` (Passed: 47). Всего: Passed: 288, Failed: 14.
