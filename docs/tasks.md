@@ -1,21 +1,73 @@
 # Задачи для Gemini
 
-Ставит Claude, Gemini делает по порядку, по одной. Статусы: «к работе», «в работе», «на проверке», «принято», «на доработку»; меняет только Claude. Спецификация: `docs/format.md`, план: `docs/plan.md`, правила: `GEMINI.md`. С 2026-10-23 задачи переданы от Kimi к Gemini (решение владельца), номера К-N заменены на У-N.
+Ставит Claude. Делаешь **одну** задачу, сдаёшь и **останавливаешься**. Статусы меняет только Claude.
 
-## У-1. Каркас решения и ядро: формат и подпись
+## Как устроены задачи (прочитай один раз)
+
+Claude уже написал:
+- **тесты** в `tests/L2Updater.Core.Tests/` — это и есть задание: что программа должна делать;
+- **заготовки** в `src/L2Updater.Core/` — классы и методы, внутри `throw new NotImplementedException();` и комментарий `// У-N (Gemini)`.
+
+Твоя работа: заменить `throw new NotImplementedException();` на код, чтобы тесты задачи стали зелёными. Правило в методе написано прямо над ним, в комментарии `///`.
+
+**Нельзя:** менять что-либо в `tests/`, менять `Models.cs`, `Exceptions.cs`, `*.csproj`, `L2Updater.sln`, `docs/format.md`, `docs/plan.md`, `GEMINI.md`; менять названия и параметры методов; добавлять пакеты NuGet. Claude проверяет это командой `git diff`, и любая такая правка = задача возвращается.
+
+**Команда проверки** (из папки `~/l2-updater`):
+
+```
+dotnet test --filter "FullyQualifiedName~ИМЯ_ТЕСТОВ"
+```
+
+Внизу вывода строка вида `Passed!  - Failed: 0, Passed: N`. Пока есть `Failed: 1` и больше, задача не готова: читай, какой тест упал и почему (строка `Assert...` и номер строки), и исправляй **код**, не тест.
+
+**Сдача задачи:**
+1. Команда проверки задачи даёт `Failed: 0`.
+2. `dotnet build` без ошибок и предупреждений.
+3. В `docs/worklog.md` сверху запись: дата, номер задачи, какие файлы менял, **последняя строка вывода `dotnet test` дословно**.
+4. `git add -A` и `git commit -m "У-N: ..."`.
+5. Сказать владельцу: «У-N готова, коммит XXXXXXX» — и **остановиться**.
+
+Застрял (тест не проходит после 5 попыток, или кажется, что тест неправильный): не меняй тест, напиши вопрос в конец этого файла (раздел «Вопросы к Claude»), закоммить и остановись.
+
+---
+
+## У-1а. Проверка путей
 
 **Статус:** к работе
 
-- Решение `L2Updater.sln`: `src/L2Updater.Core` (net8.0, без Windows), `src/L2Updater.App` (net8.0-windows, WinForms, `<EnableWindowsTargeting>true</EnableWindowsTargeting>`, чтобы собиралось на Linux), `tests/L2Updater.Core.Tests` (xUnit). `.gitignore` для .NET. `LICENSE` MIT.
-- В Core: модели `Manifest`, `FileList` по `docs/format.md` (System.Text.Json), разбор с отказом при отсутствии обязательных полей и при не-https URL.
-- `SignatureVerifier`: ECDSA P-256 / SHA-256, подпись P1363 base64, проверка по точным байтам файла, выбор ключа по `key_id`, набор доверенных ключей `TrustedKeys` (пока тестовый ключ, генерируется в тестах; настоящий открытый ключ подставит Claude).
-- `PathGuard`: все правила путей из `docs/format.md` + проверка, что полный путь внутри папки игры.
-- Тесты: верная подпись; подпись другого ключа; один изменённый байт в JSON; `serial` меньше сохранённого; пути `../x`, `/x`, `C:\x`, `a/../../x`, `con.txt`, `a:b`, длинный путь, корректные пути; не-https URL.
-- `dotnet build` и `dotnet test` зелёные на Linux. Коммит, «У-1 готова».
+- Файл: `src/L2Updater.Core/PathGuard.cs`, два метода: `IsValidRelativePath` и `Resolve`.
+- Тесты: `dotnet test --filter "FullyQualifiedName~PathGuardTests"` (должно быть Passed: 53).
+- Зачем: путь из списка файлов приходит из интернета. Если пропустить `../../Windows/...`, апдейтер запишет файл куда угодно на компьютере игрока.
+- Подсказки: `path.Split('/')`; имя без расширения = часть до первой точки; в `Resolve` сначала `IsValidRelativePath`, потом `Path.GetFullPath`, потом проверка, что полный путь начинается с папки игры **и разделителя** (иначе папка `l2game-evil` пройдёт как `l2game`), потом длина.
+
+## У-1б. Проверка подписи
+
+**Статус:** после принятия У-1а
+
+- Файл: `src/L2Updater.Core/SignatureVerifier.cs`: конструктор, `KeyIdOf`, `Verify`.
+- Тесты: `dotnet test --filter "FullyQualifiedName~SignatureVerifierTests"` (Passed: 11).
+- Только `System.Security.Cryptography`: `SHA256.HashData`, `ECDsa.Create()`, `ImportSubjectPublicKeyInfo`, `VerifyData(..., HashAlgorithmName.SHA256, DSASignatureFormat.IeeeP1363FixedFieldConcatenation)`. `Verify` никогда не бросает исключение: всё плохое = `false`.
+
+## У-1в. Чтение manifest.json и files.json
+
+**Статус:** после принятия У-1б
+
+- Файл: `src/L2Updater.Core/ManifestParser.cs`: `ParseManifest`, `ParseFileList`. Можно добавлять свои `private static` методы-помощники в этом же файле.
+- Тесты: `dotnet test --filter "FullyQualifiedName~ManifestParserTests"` (Passed: 86).
+- `System.Text.Json`, класс `JsonDocument`. Любая ошибка = `throw new ManifestException("короткое описание по-английски")`. Неизвестные поля пропускать.
+- Задача большая: делай по частям. Сначала `ParseManifest` до зелёного `Valid_manifest_is_read_completely`, потом остальные тесты manifest, потом `ParseFileList`.
+
+## У-1г. Подпись сначала, потом чтение
+
+**Статус:** после принятия У-1в
+
+- Файл: `src/L2Updater.Core/SignedDocuments.cs`: `LoadManifest`, `LoadFileList`.
+- Тесты: `dotnet test --filter "FullyQualifiedName~SignedDocumentsTests"` (Passed: 14), затем **все** тесты: `dotnet test` (Passed: 164).
+- Порядок шагов написан в комментарии над методом. Главное: подпись проверяется **до** разбора остального JSON.
 
 ## У-2. План обновления и загрузка
 
-**Статус:** к работе, после У-1
+**Статус:** позже. Перед задачей Claude напишет тесты и заготовки, как для У-1.
 
 - `UpdatePlanner`: по `FileList` и папке игры — что скачать, что пропустить (`user`), что удалить; кэш хешей по размеру и времени изменения (`.l2updater/cache.json`).
 - `Downloader`: `HttpClient`, только https, несколько зеркал по очереди, докачка (Range), таймауты, отмена, прогресс (байты/скорость), временная папка, проверка SHA-256, атомарная замена (`File.Move` с overwrite; если файл занят — понятная ошибка «закройте игру»).
@@ -23,7 +75,7 @@
 
 ## У-3. Окно (WinForms), полноценное
 
-**Статус:** к работе, после У-2
+**Статус:** позже. Перед задачей Claude напишет тесты и заготовки.
 
 - Главное окно в игровом стиле (тёмное, золото; картинки — свои или нейтральные, без логотипов и артов NCSoft): выбор клиента, выбор папки игры, прогресс файла и общий, скорость, кнопки «Играть», «Проверить все файлы», «Сайт», «Форум», «Кабинет».
 - Новости и статус серверов из `news_url` / `status_url`: только текст, без HTML-движка.
@@ -33,13 +85,13 @@
 
 ## У-4. Самообновление
 
-**Статус:** к работе, после У-3
+**Статус:** позже. Перед задачей Claude напишет тесты и заготовки.
 
 - Новая версия из `manifest.updater`: скачать, проверить SHA-256 (манифест уже проверен подписью), запустить замену через переименование (`L2Updater.exe` → `.old`, новый на место, перезапуск), откат при ошибке.
 
 ## У-5. Сборка в GitHub Actions
 
-**Статус:** к работе, после У-1 (можно раньше У-2)
+**Статус:** позже. Перед задачей Claude напишет тесты и заготовки.
 
 - `.github/workflows/build.yml`: на push и pull request — `dotnet test`, `dotnet publish` win-x64 single-file self-contained, артефакт exe. Без секретов в workflow. Это нужно для бесплатной подписи SignPath (подписывают только то, что собрано в CI из публичного кода).
 
