@@ -268,7 +268,7 @@ internal sealed class MainForm : Form
 
     private void ApplyLanguage()
     {
-        Text = Strings.Get(_currentLang, "app_title");
+        Text = Strings.Get(_currentLang, "app_title") + " " + AppConfig.BuildVersion;
         _lblTitle.Text = Strings.Get(_currentLang, "app_title");
         _btnLang.Text = Strings.Get(_currentLang, "lang_button");
 

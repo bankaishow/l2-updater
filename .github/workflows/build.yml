@@ -31,6 +31,7 @@ jobs:
           dotnet publish src/L2Updater.App -c Release -r win-x64 --self-contained
           -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
           -p:EnableCompressionInSingleFile=true -p:DebugType=none
+          -p:Version=0.1.${{ github.run_number }}
           -o publish
 
       - name: SHA-256
@@ -41,3 +42,29 @@ jobs:
           name: L2Updater-${{ github.sha }}
           path: publish/
           retention-days: 30
+
+  # Latest test build for manual checks on Windows: one fixed link, no login needed.
+  # Uses the test signing key; not for players.
+  test-build:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: L2Updater-${{ github.sha }}
+          path: publish
+
+      - name: Replace the test-build release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN: ${{ github.run_number }}
+        run: |
+          gh release delete test-build --cleanup-tag --yes || true
+          gh release create test-build publish/L2Updater.exe publish/L2Updater.exe.sha256 \
+            --target "$GITHUB_SHA" --prerelease \
+            --title "Test build 0.1.$RUN" \
+            --notes "Automatic test build 0.1.$RUN of commit $GITHUB_SHA. Test signing key, not for players."

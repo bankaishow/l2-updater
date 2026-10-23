@@ -16,5 +16,9 @@ internal static class AppConfig
         "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEk5vQLowa5OiwaDhQo4PXAQq/z447S4J3qMe+ztWyIrEXGkdtBUc1jMziN5C7c9PfUN2BrB0eXUS3fpU4/GUHqA==",
     ];
 
+    /// <summary>Build version for the window title (the CI build sets 0.1.&lt;run number&gt;).</summary>
+    public static string BuildVersion =>
+        System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "?";
+
     public static byte[][] TrustedKeyBytes() => TrustedKeys.Select(Convert.FromBase64String).ToArray();
 }
