@@ -2,6 +2,19 @@
 
 Новые записи сверху: дата, задача, что сделано, файлы, что проверено, что проверить на Windows, вопросы.
 
+## 2026-10-23 — У-2б. Скачивание файла с зеркал
+
+- Сделано: `FileDownloader` (`UrlOf`, `DownloadAsync`) — перебор зеркал по порядку, пропуск не-https без запроса, докачка через заголовок Range (206 — дописывание, 200 — скачивание с нуля), удаление частичного файла при ошибках/несовпадении размера или SHA-256, ограничение на превышение размера от сервера, атомарный перенос `File.Move` (с понятной ошибкой при блокировке файла игрой).
+- Дополнительно: снятие атрибута `ReadOnly` перед `File.Move` и `File.Delete` (в `FileDownloader.cs` и `UpdatePlanner.ApplyDeletes`), чтобы на Windows не было ошибок при замене/удалении файлов «только для чтения».
+- Файлы: `src/L2Updater.Core/FileDownloader.cs`, `src/L2Updater.Core/UpdatePlanner.cs`.
+- `dotnet build`: `0 Warning(s)`, `0 Error(s)`.
+- Последняя строка `dotnet test --filter "FullyQualifiedName~FileDownloaderTests"`:
+  `Passed!  - Failed:     0, Passed:    23, Skipped:     0, Total:    23, Duration: 77 ms - L2Updater.Core.Tests.dll (net8.0)`
+- Последняя строка `dotnet test` (все тесты):
+  `Passed!  - Failed:     0, Passed:   212, Skipped:     0, Total:   212, Duration: 122 ms - L2Updater.Core.Tests.dll (net8.0)`
+- Проверить на Windows: снятие атрибута `ReadOnly` перед `File.Move` и `File.Delete`.
+- Вопросов нет.
+
 ## 2026-10-23 — У-2а. Кэш хешей и план обновления
 
 - Сделано: сначала `HashCache` (`Load`, `Save`, `Get`, `Set`) — 10 из 10, потом `UpdatePlanner` (`Sha256OfFile`, `Plan`, `ApplyDeletes`).

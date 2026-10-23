@@ -80,13 +80,17 @@ public static class UpdatePlanner
     /// <summary>Deletes the files of plan.Delete (each through PathGuard.Resolve). A file already gone is fine.</summary>
     public static void ApplyDeletes(UpdatePlan plan, string gameRoot)
     {
-        // У-2а (Gemini)
         // Check every path first: one bad path stops everything before anything is deleted.
         var fullPaths = plan.Delete.Select(path => PathGuard.Resolve(gameRoot, path)).ToList();
         foreach (var fullPath in fullPaths)
         {
             if (File.Exists(fullPath))
+            {
+                var attr = File.GetAttributes(fullPath);
+                if ((attr & FileAttributes.ReadOnly) != 0)
+                    File.SetAttributes(fullPath, attr & ~FileAttributes.ReadOnly);
                 File.Delete(fullPath);
+            }
         }
     }
 }
