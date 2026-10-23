@@ -100,7 +100,7 @@ dotnet test --filter "FullyQualifiedName~ИМЯ_ТЕСТОВ"
 
 ## У-3б. Новости, статус серверов, прогресс
 
-**Статус:** к работе
+**Статус:** принято (2026-10-23, коммит c95cf2f). Claude проверил: тесты не тронуты, 47 из 47 (всего зелёных 288), сборка без предупреждений. Заметил и исправил ошибочные пометки «У-3а» в заготовках Claude.
 
 - Файлы: `src/L2Updater.Core/NewsFeed.cs` (`ParseNews`, `ParseStatus`, `Clean`) и `src/L2Updater.Core/ProgressTracker.cs` (`Report`, `Percent`, `BytesPerSecond`, `Remaining`, `FormatBytes`). Можно добавлять свои `private` поля и методы.
 - Тесты: `dotnet test --filter "FullyQualifiedName~NewsFeedTests|FullyQualifiedName~ProgressTrackerTests"` (Passed: 47). Всего: Passed: 288, Failed: 14.
@@ -109,7 +109,7 @@ dotnet test --filter "FullyQualifiedName~ИМЯ_ТЕСТОВ"
 
 ## У-3в. Обновление целиком
 
-**Статус:** после принятия У-3б
+**Статус:** к работе
 
 - Файл: `src/L2Updater.Core/UpdateSession.cs` (`LoadManifestAsync`, `LoadFileListAsync`, `UpdateAsync`). Запросы только через `_http`, подпись только через `_verifier`. Можно добавлять свои `private` методы.
 - Тесты: `dotnet test --filter "FullyQualifiedName~UpdateSessionTests"` (Passed: 14), затем все: `dotnet test` (Passed: 302).
