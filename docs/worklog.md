@@ -2,6 +2,49 @@
 
 Новые записи сверху: дата, задача, что сделано, файлы, что проверено, что проверить на Windows, вопросы.
 
+## 2026-10-23 — У-3г1. Внешний вид и языки (без сети)
+
+- Сделано:
+  - `Theme.cs`: палитра в тёмно-золотом игровом стиле (#14120F фон, #1E1A15 панели, #D6B25E золото, #E8DCC0 текст, #8A7F6A приглушённый, #6CC070 онлайн, #A05050 выключен) и шрифты `Segoe UI` (заголовок, секции, обычный, полужирный, кнопка «Играть»). Метод стилизации плоских кнопок `ApplyFlatButton`.
+  - `Strings.cs`: локализация всех текстов окна на двух языках ("ru" и "en") через `Strings.Get(language, key)`. Неизвестный ключ возвращает сам ключ.
+  - `MainForm.cs`: полное построение окна кодом (900×600, FixedSingle, CenterScreen). В окне ни одной надписи текстом — всё выводится через `Strings.Get`. Элементы макета: заголовок «L2 ZALUPA», переключатель RU/EN (меняет язык на лету), выбор клиента (панель пустая), строка выбора папки с кнопкой [Изменить…], блоки новостей и серверов с золотыми рамками и заглушками, строки прогресса текущего файла и общего прогресса с полосами GoldProgressBar, строка состояния, кнопки ссылок (скрыты), кнопка проверки и неактивная кнопка [ ИГРАТЬ ].
+- Элементы окна:
+  1. `MainForm`: главное окно 900×600, фиксированный размер, фон `Theme.Background`.
+  2. `_lblTitle`: золотой заголовок «L2 ZALUPA» (16pt Bold).
+  3. `_btnLang`: кнопка переключения языка (RU/EN).
+  4. `_lblClientHeader`: метка «Клиент:».
+  5. `_panelClients`: горизонтальная панель для кнопок выбора клиента (пока пустая).
+  6. `_lblFolderHeader`: метка «Папка:».
+  7. `_lblFolderPath`: поле отображения пути к папке игры.
+  8. `_btnChangeFolder`: плоская кнопка [Изменить…] с золотой рамкой.
+  9. `_panelNews`: панель новостей 520×220 с рамкой `Theme.Gold`.
+  10. `_lblNewsHeader`: золотой заголовок «Новости».
+  11. `_lblNoNews`: надпись по центру «Нет новостей».
+  12. `_panelServers`: панель серверов 315×220 с рамкой `Theme.Gold`.
+  13. `_lblServersHeader`: золотой заголовок «Серверы».
+  14. `_lblNoServers`: надпись по центру «Нет данных».
+  15. `_lblFileHeader`: метка «Файл:».
+  16. `_lblFileDetails`: метка размера/байтов текущего файла.
+  17. `_pbFile`: золотой индикатор прогресса текущего файла (`GoldProgressBar`).
+  18. `_lblFilePercent`: проценты прогресса файла (золотой 9.5pt Bold).
+  19. `_lblTotalHeader`: метка «Всего:».
+  20. `_lblTotalDetails`: метка общего объёма, скорости и оставшегося времени.
+  21. `_pbTotal`: золотой индикатор общего прогресса (`GoldProgressBar`).
+  22. `_lblTotalPercent`: проценты общего прогресса (золотой 9.5pt Bold).
+  23. `_lblStatus`: строка состояния.
+  24. `_btnSite`: кнопка [Сайт] (`Visible = false`).
+  25. `_btnForum`: кнопка [Форум] (`Visible = false`).
+  26. `_btnCabinet`: кнопка [Кабинет] (`Visible = false`).
+  27. `_btnCheckAll`: кнопка [Проверить все файлы].
+  28. `_btnPlay`: главная кнопка [ ИГРАТЬ ] (`Enabled = false`).
+- Ключи в `Strings.cs`:
+  `app_title`, `client_label`, `folder_label`, `btn_change_folder`, `news_title`, `servers_title`, `no_news`, `no_servers`, `file_label`, `total_label`, `status_ready`, `btn_site`, `btn_forum`, `btn_cabinet`, `btn_check_all`, `btn_play`, `lang_button`, `offline`, `players_suffix`, `empty_folder`, `zero_percent`, `zero_bytes`.
+- Файлы: `src/L2Updater.App/Theme.cs`, `src/L2Updater.App/Strings.cs`, `src/L2Updater.App/MainForm.cs`.
+- `dotnet build`: `0 Warning(s)`, `0 Error(s)`.
+- Последняя строка `dotnet test` (все тесты):
+  `Passed!  - Failed:     0, Passed:   302, Skipped:     0, Total:   302, Duration: 329 ms - L2Updater.Core.Tests.dll (net8.0)`
+- Вопросов нет.
+
 ## 2026-10-23 — У-3в. Обновление целиком
 
 - Сделано: `UpdateSession` (`LoadManifestAsync`, `LoadFileListAsync`, `UpdateAsync`). Загрузка и проверка манифеста и списка файлов по HTTPS с проверкой подписи и лимита размера (16 МБ); выполнение обновления с определением плана, пофайловой загрузкой, расчётом общего прогресса, применением удалений и гарантированным сохранением кэша хешей даже в случае ошибки (`try` / `finally`).
