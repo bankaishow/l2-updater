@@ -76,8 +76,7 @@ dotnet test --filter "FullyQualifiedName~ИМЯ_ТЕСТОВ"
 
 ## У-2б. Скачивание файла с зеркал
 
-**Статус:** на доработку (2026-10-23, коммит 4699f2c). Всё остальное хорошо: 212 из 212, зеркала, докачка, лимит размера, снятие «только для чтения» сделаны верно.
-**Что исправить:** в `DownloadAsync` при `File.Move` ловится только `IOException`. Windows на занятый или закрытый файл часто отвечает `UnauthorizedAccessException` («доступ запрещён»), и игрок видит падение вместо «close the game». Claude добавил тест `Access_denied_on_replace_gives_close_the_game_message`: он сейчас падает. Лови оба исключения (`catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)`). Проверка: `dotnet test` → Passed: 213, Failed: 0. Сдай как обычно («У-2б готова») и остановись.
+**Статус:** принято (2026-10-23, коммиты 4699f2c и доработка 01708bd). Claude проверил: тесты не тронуты, 213 из 213, сборка без предупреждений. Замечание на будущее (не ошибка): при неудачной замене временный файл удаляется, после «закройте игру» файл скачается заново целиком. **У-2 закрыта целиком.**
 
 - Файл: `src/L2Updater.Core/FileDownloader.cs`: `UrlOf`, `DownloadAsync`. Запросы только через поле `_http`. Можно добавлять свои `private` методы.
 - Тесты: `dotnet test --filter "FullyQualifiedName~FileDownloaderTests"` (Passed: 23), затем **все**: `dotnet test` (Passed: 212).
