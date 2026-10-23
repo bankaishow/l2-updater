@@ -185,23 +185,24 @@ public sealed class FileDownloader(HttpClient http)
         }
 
         // 5. Success: create target folder and move into place
-        var targetDir = Path.GetDirectoryName(target);
-        if (!string.IsNullOrEmpty(targetDir))
-            Directory.CreateDirectory(targetDir);
-
-        if (File.Exists(target))
-        {
-            var attr = File.GetAttributes(target);
-            if ((attr & FileAttributes.ReadOnly) != 0)
-                File.SetAttributes(target, attr & ~FileAttributes.ReadOnly);
-        }
-
         try
         {
+            var targetDir = Path.GetDirectoryName(target);
+            if (!string.IsNullOrEmpty(targetDir))
+                Directory.CreateDirectory(targetDir);
+
+            if (File.Exists(target))
+            {
+                var attr = File.GetAttributes(target);
+                if ((attr & FileAttributes.ReadOnly) != 0)
+                    File.SetAttributes(target, attr & ~FileAttributes.ReadOnly);
+            }
+
             File.Move(partFile, target, overwrite: true);
         }
-        catch (IOException ex)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
+            TryDeleteFile(partFile);
             throw new UpdateException($"Failed to replace '{entry.Path}'. Please close the game and try again: {ex.Message}");
         }
     }
