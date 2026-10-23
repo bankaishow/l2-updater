@@ -7,3 +7,6 @@ public sealed class ManifestException(string message) : Exception(message);
 
 /// <summary>A path from a file list is not allowed (see PathGuard).</summary>
 public sealed class UnsafePathException(string message) : Exception(message);
+
+/// <summary>A file could not be downloaded or put in place (all mirrors failed, file is busy...).</summary>
+public sealed class UpdateException(string message) : Exception(message);

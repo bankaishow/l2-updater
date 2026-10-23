@@ -35,3 +35,14 @@ public sealed record FileList(
     IReadOnlyList<string> Delete);
 
 public sealed record FileEntry(string Path, long Size, string Sha256, bool User);
+
+/// <summary>
+/// What an update has to do (UpdatePlanner.Plan). Paths are relative, as in files.json.
+/// Download: files that are missing or differ. Delete: files from "delete" that exist.
+/// UpToDate: files that already match. UserKept: "user" files that exist and are left alone.
+/// </summary>
+public sealed record UpdatePlan(
+    IReadOnlyList<FileEntry> Download,
+    IReadOnlyList<string> Delete,
+    int UpToDate,
+    int UserKept);
