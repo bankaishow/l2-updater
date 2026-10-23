@@ -50,7 +50,7 @@ dotnet test --filter "FullyQualifiedName~ИМЯ_ТЕСТОВ"
 
 ## У-1в. Чтение manifest.json и files.json
 
-**Статус:** к работе
+**Статус:** принято (2026-10-23, коммит 9a5e7e0). Claude проверил: тесты не тронуты, 86 из 86 (всего зелёных 150), сборка без предупреждений. Решение Gemini «явный null в необязательном поле = ошибка» одобрено: файл из интернета, строгий вариант безопаснее.
 
 - Файл: `src/L2Updater.Core/ManifestParser.cs`: `ParseManifest`, `ParseFileList`. Можно добавлять свои `private static` методы-помощники в этом же файле.
 - Тесты: `dotnet test --filter "FullyQualifiedName~ManifestParserTests"` (Passed: 86).
@@ -59,7 +59,7 @@ dotnet test --filter "FullyQualifiedName~ИМЯ_ТЕСТОВ"
 
 ## У-1г. Подпись сначала, потом чтение
 
-**Статус:** после принятия У-1в
+**Статус:** к работе
 
 - Файл: `src/L2Updater.Core/SignedDocuments.cs`: `LoadManifest`, `LoadFileList`.
 - Тесты: `dotnet test --filter "FullyQualifiedName~SignedDocumentsTests"` (Passed: 14), затем **все** тесты: `dotnet test` (Passed: 164).
