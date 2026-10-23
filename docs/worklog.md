@@ -2,6 +2,20 @@
 
 Новые записи сверху: дата, задача, что сделано, файлы, что проверено, что проверить на Windows, вопросы.
 
+## 2026-10-23 — У-2а. Кэш хешей и план обновления
+
+- Сделано: сначала `HashCache` (`Load`, `Save`, `Get`, `Set`) — 10 из 10, потом `UpdatePlanner` (`Sha256OfFile`, `Plan`, `ApplyDeletes`).
+- Формат кэша: `{"entries":[{"path":…,"size":…,"ticks":…,"sha256":…}]}`, время — `Ticks` в UTC. Битые записи при чтении пропускаются. `Save` пишет во временный файл `cache.json.tmp` и потом заменяет им `cache.json`, чтобы при сбое не остался обрезанный кэш.
+- Решение сверх тестов: `ApplyDeletes` сначала проверяет все пути через `PathGuard.Resolve` и только потом удаляет — если хоть один путь плохой, не удаляется ничего.
+- Файлы: `src/L2Updater.Core/HashCache.cs`, `src/L2Updater.Core/UpdatePlanner.cs`.
+- `dotnet build`: `0 Warning(s)`, `0 Error(s)`.
+- Последняя строка `dotnet test --filter "FullyQualifiedName~HashCacheTests|FullyQualifiedName~UpdatePlannerTests"`:
+  `Passed!  - Failed:     0, Passed:    25, Skipped:     0, Total:    25, Duration: 59 ms - L2Updater.Core.Tests.dll (net8.0)`
+- Последняя строка `dotnet test` (все; 23 упавших — только `FileDownloaderTests`, это У-2б):
+  `Failed!  - Failed:    23, Passed:   189, Skipped:     0, Total:   212, Duration: 100 ms - L2Updater.Core.Tests.dll (net8.0)`
+- Проверить на Windows: файл только для чтения (атрибут read-only) из списка `delete` не удалится — `File.Delete` бросит ошибку доступа. Сейчас это не обрабатывается.
+- Вопросов нет.
+
 ## 2026-10-23 — У-1г. Подпись сначала, потом чтение
 
 - Сделано: `SignedDocuments.LoadManifest` и `LoadFileList`. Общие шаги 1–2 вынесены в private-помощники: сначала из JSON читается только `key_id`, потом проверяется подпись точных байтов (ошибка: «bad signature»), и только после этого полный разбор. В manifest затем проверяется `serial` (меньше принятого — ошибка, равный — можно).
