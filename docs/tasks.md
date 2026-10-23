@@ -109,7 +109,7 @@ dotnet test --filter "FullyQualifiedName~ИМЯ_ТЕСТОВ"
 
 ## У-3в. Обновление целиком
 
-**Статус:** к работе
+**Статус:** принято (2026-10-23, коммит f0c7037). Claude проверил: тесты не тронуты, все 302 зелёные (3 прогона), сборка без предупреждений. Хорошо: размер документа проверяется по заголовку ещё до чтения. **«Мозг» окна (У-3а–в) готов.**
 
 - Файл: `src/L2Updater.Core/UpdateSession.cs` (`LoadManifestAsync`, `LoadFileListAsync`, `UpdateAsync`). Запросы только через `_http`, подпись только через `_verifier`. Можно добавлять свои `private` методы.
 - Тесты: `dotnet test --filter "FullyQualifiedName~UpdateSessionTests"` (Passed: 14), затем все: `dotnet test` (Passed: 302).
