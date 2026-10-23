@@ -40,6 +40,22 @@ All files are UTF-8 JSON. Every signed document is published as two files: `<nam
 - All URLs must be `https://`.
 - `news_url` / `status_url` are **not** signed data, just display data: shown as plain text, never executed, never used to choose files.
 
+## news (news_url) and status (status_url)
+
+Not signed. The updater treats them as untrusted text: on any problem it shows nothing instead of failing. Max 256 KB each.
+
+```json
+{ "items": [ { "date": "2026-10-23", "title": "Server x1 is open", "url": "https://example.com/news/12" } ] }
+```
+
+- `items`: up to 20 are shown; `title` required (trimmed, control characters removed, max 200 chars, empty → item skipped); `date` optional `YYYY-MM-DD`; `url` optional, kept only if https.
+
+```json
+{ "servers": [ { "id": "mythras_x1", "name": "Mythras x1", "online": true, "players": 12 } ] }
+```
+
+- `servers`: up to 20; `name` required (same cleaning as `title`, max 64 chars); `online` bool (default false); `players` optional number ≥ 0; `id` optional.
+
 ## files.json (one per client)
 
 ```json

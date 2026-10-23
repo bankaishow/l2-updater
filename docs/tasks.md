@@ -85,15 +85,39 @@ dotnet test --filter "FullyQualifiedName~ИМЯ_ТЕСТОВ"
 - **Дополнительно (по замечанию Gemini из У-2а, тестов нет, проверяется на Windows):** в Windows файл с атрибутом «только для чтения» не удаляется и не заменяется. Перед `File.Move` на место существующего файла и перед `File.Delete` в `UpdatePlanner.ApplyDeletes` снимай этот атрибут: если `(File.GetAttributes(путь) & FileAttributes.ReadOnly) != 0`, то `File.SetAttributes(путь, атрибуты & ~FileAttributes.ReadOnly)`. Только для файла, не для папки. В этой задаче можно менять и `UpdatePlanner.cs` (только `ApplyDeletes`). В журнал: пункт «проверить на Windows».
 - Делай по частям: сначала `UrlOf` и обычная закачка (`Downloads_from_first_mirror_into_place`), потом зеркала, потом докачка, потом безопасность.
 
-## У-3. Окно (WinForms), полноценное
+## У-3. Окно программы
 
-**Статус:** позже. Перед задачей Claude напишет тесты и заготовки.
+Делится на четыре шага. Первые три — «мозг» окна, с тестами, как раньше. Четвёртый — само окно, его проверяет владелец на Windows 11.
 
-- Главное окно в игровом стиле (тёмное, золото; картинки — свои или нейтральные, без логотипов и артов NCSoft): выбор клиента, выбор папки игры, прогресс файла и общий, скорость, кнопки «Играть», «Проверить все файлы», «Сайт», «Форум», «Кабинет».
-- Новости и статус серверов из `news_url` / `status_url`: только текст, без HTML-движка.
-- RU/EN (ресурсы), выбор языка, запоминание выбора в `updater.ini` рядом с exe (или в `%APPDATA%\L2Updater`, если папка exe только для чтения).
-- Работа без прав администратора; если игра в `Program Files` — предупреждение.
-- Собирается на Linux; проверку на Windows делает владелец по списку в журнале.
+## У-3а. Настройки и запуск игры
+
+**Статус:** к работе
+
+- Файлы: `src/L2Updater.Core/UpdaterSettings.cs` (`Load`, `Save`, `ChooseFolder`) и `src/L2Updater.Core/GameLauncher.cs` (`BuildStartInfo`, `IsUnderProgramFiles`). Можно добавлять свои `private` методы.
+- Тесты: `dotnet test --filter "FullyQualifiedName~UpdaterSettingsTests|FullyQualifiedName~GameLauncherTests"` (Passed: 28). Всего: `dotnet test` → Passed: 241, Failed: 61 (это тесты У-3б и У-3в).
+- Зачем: `updater.ini` лежит у игрока, его могут испортить руками; программа не должна падать и не должна дать подставить чужой адрес манифеста через перенос строки в имени папки.
+- Подсказки: `File.ReadAllLines`, `line.IndexOf('=')`; `long.TryParse` с `NumberStyles.None`; запись через временный файл, как в `HashCache.Save`; проверка «можно ли писать в папку» — создать и удалить пробный файл.
+
+## У-3б. Новости, статус серверов, прогресс
+
+**Статус:** после принятия У-3а
+
+- Файлы: `src/L2Updater.Core/NewsFeed.cs` (`ParseNews`, `ParseStatus`, `Clean`) и `src/L2Updater.Core/ProgressTracker.cs` (`Report`, `Percent`, `BytesPerSecond`, `Remaining`, `FormatBytes`). Можно добавлять свои `private` поля и методы.
+- Тесты: `dotnet test --filter "FullyQualifiedName~NewsFeedTests|FullyQualifiedName~ProgressTrackerTests"` (Passed: 47). Всего: Passed: 288, Failed: 14.
+- Зачем: новости и статус не подписаны, это чужой текст из интернета. В нём могут быть невидимые символы, которые переворачивают строку (`evil\u202Etxt.exe`), или огромный файл. `NewsFeed` никогда не бросает исключение.
+- Формат новостей и статуса: `docs/format.md`, раздел «news and status». Время в `ProgressTracker` — только через поле `_time`.
+
+## У-3в. Обновление целиком
+
+**Статус:** после принятия У-3б
+
+- Файл: `src/L2Updater.Core/UpdateSession.cs` (`LoadManifestAsync`, `LoadFileListAsync`, `UpdateAsync`). Запросы только через `_http`, подпись только через `_verifier`. Можно добавлять свои `private` методы.
+- Тесты: `dotnet test --filter "FullyQualifiedName~UpdateSessionTests"` (Passed: 14), затем все: `dotnet test` (Passed: 302).
+- Это сборка из готовых частей: `SignedDocuments`, `HashCache`, `UpdatePlanner`, `FileDownloader`. Новой логики почти нет — следи за порядком шагов из комментария над `UpdateAsync` и за тем, что кэш сохраняется даже при ошибке (`try` / `finally`).
+
+## У-3г. Само окно
+
+**Статус:** позже. Claude напишет макет окна и список ручной проверки для владельца.
 
 ## У-4. Самообновление
 

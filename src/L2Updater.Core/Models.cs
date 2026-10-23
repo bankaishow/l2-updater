@@ -46,3 +46,18 @@ public sealed record UpdatePlan(
     IReadOnlyList<string> Delete,
     int UpToDate,
     int UserKept);
+
+/// <summary>One news line for the window (NewsFeed.ParseNews). Url is https or null.</summary>
+public sealed record NewsItem(DateOnly? Date, string Title, string? Url);
+
+/// <summary>One server line for the window (NewsFeed.ParseStatus). Players is null if unknown.</summary>
+public sealed record ServerStatus(string? Id, string Name, bool Online, int? Players);
+
+/// <summary>
+/// Progress of a whole update (UpdateSession.UpdateAsync).
+/// FileIndex is 1-based; BytesDone and BytesTotal are for all files to download together.
+/// </summary>
+public sealed record UpdateProgress(int FileIndex, int FileCount, string CurrentPath, long BytesDone, long BytesTotal);
+
+/// <summary>What an update did.</summary>
+public sealed record UpdateResult(int Downloaded, int Deleted, int UpToDate, int UserKept);
