@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.Text;
+
 namespace L2Updater.Core;
 
 /// <summary>
@@ -34,7 +37,67 @@ public sealed class UpdaterSettings
     public static UpdaterSettings Load(string file)
     {
         // У-3а (Gemini). Tests: tests/L2Updater.Core.Tests/UpdaterSettingsTests.cs
-        throw new NotImplementedException();
+        var settings = new UpdaterSettings();
+        if (string.IsNullOrWhiteSpace(file) || !File.Exists(file))
+            return settings;
+
+        try
+        {
+            var lines = File.ReadAllLines(file);
+            foreach (var rawLine in lines)
+            {
+                var line = rawLine.Trim();
+                if (line.Length == 0 || line.StartsWith('#'))
+                    continue;
+
+                var eqIndex = line.IndexOf('=');
+                if (eqIndex < 0)
+                    continue;
+
+                var key = line[..eqIndex].Trim();
+                var val = line[(eqIndex + 1)..].Trim();
+
+                if (string.Equals(key, "manifest_url", StringComparison.Ordinal))
+                {
+                    if (Uri.TryCreate(val, UriKind.Absolute, out var uri) &&
+                        string.Equals(uri.Scheme, "https", StringComparison.OrdinalIgnoreCase))
+                    {
+                        settings.ManifestUrl = val;
+                    }
+                    else
+                    {
+                        settings.ManifestUrl = null;
+                    }
+                }
+                else if (string.Equals(key, "language", StringComparison.Ordinal))
+                {
+                    settings.Language = (val is "ru" or "en") ? val : "ru";
+                }
+                else if (string.Equals(key, "last_client", StringComparison.Ordinal))
+                {
+                    settings.LastClient = val;
+                }
+                else if (string.Equals(key, "last_serial", StringComparison.Ordinal))
+                {
+                    if (long.TryParse(val, NumberStyles.None, CultureInfo.InvariantCulture, out var serial) && serial >= 0)
+                        settings.LastSerial = serial;
+                    else
+                        settings.LastSerial = 0;
+                }
+                else if (key.StartsWith("game_folder.", StringComparison.Ordinal))
+                {
+                    var clientId = key["game_folder.".Length..];
+                    if (clientId.Length > 0)
+                        settings.GameFolders[clientId] = val;
+                }
+            }
+        }
+        catch
+        {
+            return new UpdaterSettings();
+        }
+
+        return settings;
     }
 
     /// <summary>
@@ -45,8 +108,44 @@ public sealed class UpdaterSettings
     public void Save(string file)
     {
         // У-3а (Gemini)
-        throw new NotImplementedException();
+        var lines = new List<string>();
+
+        if (IsValidValue(ManifestUrl))
+            lines.Add($"manifest_url={ManifestUrl}");
+
+        if (IsValidValue(Language))
+            lines.Add($"language={Language}");
+
+        if (IsValidValue(LastClient))
+            lines.Add($"last_client={LastClient}");
+
+        lines.Add($"last_serial={LastSerial}");
+
+        foreach (var (id, folder) in GameFolders.OrderBy(kv => kv.Key, StringComparer.Ordinal))
+        {
+            if (IsValidValue(id) && IsValidValue(folder))
+                lines.Add($"game_folder.{id}={folder}");
+        }
+
+        var dir = Path.GetDirectoryName(Path.GetFullPath(file));
+        if (!string.IsNullOrEmpty(dir))
+            Directory.CreateDirectory(dir);
+
+        var tempFile = file + ".tmp";
+        File.WriteAllLines(tempFile, lines, Encoding.UTF8);
+
+        if (File.Exists(file))
+        {
+            var attr = File.GetAttributes(file);
+            if ((attr & FileAttributes.ReadOnly) != 0)
+                File.SetAttributes(file, attr & ~FileAttributes.ReadOnly);
+        }
+
+        File.Move(tempFile, file, overwrite: true);
     }
+
+    private static bool IsValidValue(string? val) =>
+        val != null && val.IndexOfAny(['\r', '\n']) < 0;
 
     /// <summary>
     /// Folder for updater.ini: <paramref name="exeFolder"/> if a file can be created and deleted there,
@@ -55,6 +154,37 @@ public sealed class UpdaterSettings
     public static string ChooseFolder(string exeFolder, string appDataFolder)
     {
         // У-3а (Gemini)
-        throw new NotImplementedException();
+        var isWritable = false;
+        if (!string.IsNullOrWhiteSpace(exeFolder) && Directory.Exists(exeFolder))
+        {
+            var probeFile = Path.Combine(exeFolder, $".probe_{Guid.NewGuid():N}.tmp");
+            try
+            {
+                File.WriteAllBytes(probeFile, [1]);
+                isWritable = true;
+            }
+            catch
+            {
+                isWritable = false;
+            }
+            finally
+            {
+                try
+                {
+                    if (File.Exists(probeFile))
+                        File.Delete(probeFile);
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        if (isWritable)
+            return exeFolder;
+
+        var fallback = Path.Combine(appDataFolder, "L2Updater");
+        Directory.CreateDirectory(fallback);
+        return fallback;
     }
 }

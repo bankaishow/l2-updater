@@ -2,6 +2,19 @@
 
 Новые записи сверху: дата, задача, что сделано, файлы, что проверено, что проверить на Windows, вопросы.
 
+## 2026-10-23 — У-3а. Настройки и запуск игры
+
+- Сделано:
+  - `UpdaterSettings` (`Load`, `Save`, `ChooseFolder`): чтение `updater.ini` с защитой от повреждённых данных, комментариев и пробелов; фильтрация языка (только "ru"/"en", остальное -> "ru"); проверка `manifest_url` (только https); сериалы только неотрицательные; запись через временный файл с фильтрацией переносов строк (`\r`, `\n`) во избежание внедрения чужих ключей; выбор папки для настроек (папка exe при доступности на запись, иначе `%APPDATA%\L2Updater`).
+  - `GameLauncher` (`BuildStartInfo`, `IsUnderProgramFiles`): формирование `ProcessStartInfo` для запуска exe игры с рабочей папкой; проверка наличия exe; проверка нахождения папки игры внутри `Program Files` для предупреждения о необходимости прав администратора.
+- Файлы: `src/L2Updater.Core/UpdaterSettings.cs`, `src/L2Updater.Core/GameLauncher.cs`.
+- `dotnet build`: `0 Warning(s)`, `0 Error(s)`.
+- Последняя строка `dotnet test --filter "FullyQualifiedName~UpdaterSettingsTests|FullyQualifiedName~GameLauncherTests"`:
+  `Passed!  - Failed:     0, Passed:    28, Skipped:     0, Total:    28, Duration: 47 ms - L2Updater.Core.Tests.dll (net8.0)`
+- Последняя строка `dotnet test` (все тесты; 61 упавший — У-3б и У-3в):
+  `Failed!  - Failed:    61, Passed:   241, Skipped:     0, Total:   302, Duration: 175 ms - L2Updater.Core.Tests.dll (net8.0)`
+- Вопросов нет.
+
 ## 2026-10-23 — У-2б. Доработка (обработка UnauthorizedAccessException)
 
 - Сделано: в `FileDownloader.DownloadAsync` блок замены файла (`Directory.CreateDirectory`, снятие `ReadOnly`, `File.Move`) обёрнут в перехват `IOException` и `UnauthorizedAccessException`. При ошибке доступа (занятый или закрытый файл на Windows) частичный файл удаляется и выбрасывается `UpdateException` с просьбой закрыть игру.
