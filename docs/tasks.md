@@ -67,7 +67,7 @@ dotnet test --filter "FullyQualifiedName~ИМЯ_ТЕСТОВ"
 
 ## У-2а. Кэш хешей и план обновления
 
-**Статус:** к работе
+**Статус:** принято (2026-10-23, коммит 82c5b00). Claude проверил: тесты не тронуты, 25 из 25 (всего зелёных 189), сборка без предупреждений. Решения Gemini одобрены: сначала проверка всех путей удаления, потом удаление; кэш пишется через временный файл. Замечание про «только для чтения» принято, исправление в У-2б.
 
 - Файлы: `src/L2Updater.Core/HashCache.cs` (`Load`, `Save`, `Get`, `Set`) и `src/L2Updater.Core/UpdatePlanner.cs` (`Sha256OfFile`, `Plan`, `ApplyDeletes`). Можно добавлять свои `private` поля и методы в этих файлах.
 - Тесты: `dotnet test --filter "FullyQualifiedName~HashCacheTests|FullyQualifiedName~UpdatePlannerTests"` (Passed: 25). Старые 164 должны остаться зелёными: `dotnet test` (Passed: 189, Failed: 23 — это тесты У-2б, их пока не трогай).
@@ -76,12 +76,13 @@ dotnet test --filter "FullyQualifiedName~ИМЯ_ТЕСТОВ"
 
 ## У-2б. Скачивание файла с зеркал
 
-**Статус:** после принятия У-2а
+**Статус:** к работе
 
 - Файл: `src/L2Updater.Core/FileDownloader.cs`: `UrlOf`, `DownloadAsync`. Запросы только через поле `_http`. Можно добавлять свои `private` методы.
 - Тесты: `dotnet test --filter "FullyQualifiedName~FileDownloaderTests"` (Passed: 23), затем **все**: `dotnet test` (Passed: 212).
 - Зачем: файл качается из интернета. Битый или подменённый файл не должен заменить рабочий, сервер не должен забить диск лишними байтами, оборванная закачка продолжается с места обрыва.
 - 8 правил в комментарии над `DownloadAsync`, на каждое есть тест. Подсказки: `HttpCompletionOption.ResponseHeadersRead`, чтение потока кусками; считать байты и прерываться, если их больше `entry.Size`; проверка SHA-256 через `UpdatePlanner.Sha256OfFile` после закачки; заголовок `request.Headers.Range = new RangeHeaderValue(from, null)`.
+- **Дополнительно (по замечанию Gemini из У-2а, тестов нет, проверяется на Windows):** в Windows файл с атрибутом «только для чтения» не удаляется и не заменяется. Перед `File.Move` на место существующего файла и перед `File.Delete` в `UpdatePlanner.ApplyDeletes` снимай этот атрибут: если `(File.GetAttributes(путь) & FileAttributes.ReadOnly) != 0`, то `File.SetAttributes(путь, атрибуты & ~FileAttributes.ReadOnly)`. Только для файла, не для папки. В этой задаче можно менять и `UpdatePlanner.cs` (только `ApplyDeletes`). В журнал: пункт «проверить на Windows».
 - Делай по частям: сначала `UrlOf` и обычная закачка (`Downloads_from_first_mirror_into_place`), потом зеркала, потом докачка, потом безопасность.
 
 ## У-3. Окно (WinForms), полноценное
