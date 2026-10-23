@@ -45,14 +45,21 @@ internal sealed class MainForm : Form
 
     public MainForm()
     {
+        SuspendLayout();
+        AutoScaleDimensions = new SizeF(96F, 96F);
+        AutoScaleMode = AutoScaleMode.Dpi;
+
         InitializeWindow();
         InitializeControls();
         ApplyLanguage();
+
+        ResumeLayout(false);
+        PerformLayout();
     }
 
     private void InitializeWindow()
     {
-        ClientSize = new Size(900, 600);
+        ClientSize = new Size(1000, 680);
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox = false;
         StartPosition = FormStartPosition.CenterScreen;
@@ -64,33 +71,35 @@ internal sealed class MainForm : Form
     private void InitializeControls()
     {
         // Title & Language
-        _lblTitle.Location = new Point(25, 16);
+        _lblTitle.Location = new Point(30, 18);
         _lblTitle.AutoSize = true;
         _lblTitle.Font = Theme.TitleFont;
         _lblTitle.ForeColor = Theme.Gold;
 
-        _btnLang.Location = new Point(810, 14);
-        _btnLang.Size = new Size(65, 30);
+        _btnLang.Location = new Point(894, 18);
+        _btnLang.Size = new Size(76, 34);
         Theme.ApplyFlatButton(_btnLang);
         _btnLang.Click += (s, e) => ToggleLanguage();
 
         // Clients
-        _lblClientHeader.Location = new Point(25, 62);
-        _lblClientHeader.AutoSize = true;
+        _lblClientHeader.Location = new Point(30, 68);
+        _lblClientHeader.Size = new Size(75, 28);
         _lblClientHeader.ForeColor = Theme.MutedText;
+        _lblClientHeader.TextAlign = ContentAlignment.MiddleLeft;
 
-        _panelClients.Location = new Point(90, 56);
-        _panelClients.Size = new Size(785, 32);
+        _panelClients.Location = new Point(110, 65);
+        _panelClients.Size = new Size(860, 34);
         _panelClients.BackColor = Theme.Background;
         _panelClients.FlowDirection = FlowDirection.LeftToRight;
 
         // Folder
-        _lblFolderHeader.Location = new Point(25, 99);
-        _lblFolderHeader.AutoSize = true;
+        _lblFolderHeader.Location = new Point(30, 108);
+        _lblFolderHeader.Size = new Size(75, 28);
         _lblFolderHeader.ForeColor = Theme.MutedText;
+        _lblFolderHeader.TextAlign = ContentAlignment.MiddleLeft;
 
-        _lblFolderPath.Location = new Point(90, 96);
-        _lblFolderPath.Size = new Size(665, 26);
+        _lblFolderPath.Location = new Point(110, 106);
+        _lblFolderPath.Size = new Size(710, 32);
         _lblFolderPath.BackColor = Theme.Panel;
         _lblFolderPath.ForeColor = Theme.Text;
         _lblFolderPath.TextAlign = ContentAlignment.MiddleLeft;
@@ -101,13 +110,13 @@ internal sealed class MainForm : Form
             e.Graphics.DrawRectangle(pen, 0, 0, _lblFolderPath.Width - 1, _lblFolderPath.Height - 1);
         };
 
-        _btnChangeFolder.Location = new Point(765, 95);
-        _btnChangeFolder.Size = new Size(110, 28);
+        _btnChangeFolder.Location = new Point(830, 106);
+        _btnChangeFolder.Size = new Size(140, 32);
         Theme.ApplyFlatButton(_btnChangeFolder);
 
         // News Panel
-        _panelNews.Location = new Point(25, 135);
-        _panelNews.Size = new Size(520, 220);
+        _panelNews.Location = new Point(30, 150);
+        _panelNews.Size = new Size(580, 240);
         _panelNews.BackColor = Theme.Panel;
         _panelNews.Paint += (s, e) =>
         {
@@ -115,13 +124,14 @@ internal sealed class MainForm : Form
             e.Graphics.DrawRectangle(pen, 0, 0, _panelNews.Width - 1, _panelNews.Height - 1);
         };
 
-        _lblNewsHeader.Location = new Point(12, 10);
-        _lblNewsHeader.AutoSize = true;
+        _lblNewsHeader.Location = new Point(14, 12);
+        _lblNewsHeader.Size = new Size(200, 28);
         _lblNewsHeader.Font = Theme.SectionFont;
         _lblNewsHeader.ForeColor = Theme.Gold;
+        _lblNewsHeader.TextAlign = ContentAlignment.MiddleLeft;
 
-        _lblNoNews.Location = new Point(12, 45);
-        _lblNoNews.Size = new Size(496, 160);
+        _lblNoNews.Location = new Point(14, 50);
+        _lblNoNews.Size = new Size(552, 175);
         _lblNoNews.ForeColor = Theme.MutedText;
         _lblNoNews.TextAlign = ContentAlignment.MiddleCenter;
 
@@ -129,8 +139,8 @@ internal sealed class MainForm : Form
         _panelNews.Controls.Add(_lblNoNews);
 
         // Servers Panel
-        _panelServers.Location = new Point(560, 135);
-        _panelServers.Size = new Size(315, 220);
+        _panelServers.Location = new Point(630, 150);
+        _panelServers.Size = new Size(340, 240);
         _panelServers.BackColor = Theme.Panel;
         _panelServers.Paint += (s, e) =>
         {
@@ -138,85 +148,89 @@ internal sealed class MainForm : Form
             e.Graphics.DrawRectangle(pen, 0, 0, _panelServers.Width - 1, _panelServers.Height - 1);
         };
 
-        _lblServersHeader.Location = new Point(12, 10);
-        _lblServersHeader.AutoSize = true;
+        _lblServersHeader.Location = new Point(14, 12);
+        _lblServersHeader.Size = new Size(200, 28);
         _lblServersHeader.Font = Theme.SectionFont;
         _lblServersHeader.ForeColor = Theme.Gold;
+        _lblServersHeader.TextAlign = ContentAlignment.MiddleLeft;
 
-        _lblNoServers.Location = new Point(12, 45);
-        _lblNoServers.Size = new Size(291, 160);
+        _lblNoServers.Location = new Point(14, 50);
+        _lblNoServers.Size = new Size(312, 175);
         _lblNoServers.ForeColor = Theme.MutedText;
         _lblNoServers.TextAlign = ContentAlignment.MiddleCenter;
 
         _panelServers.Controls.Add(_lblServersHeader);
         _panelServers.Controls.Add(_lblNoServers);
 
-        // Progress: File
-        _lblFileHeader.Location = new Point(25, 370);
-        _lblFileHeader.AutoSize = true;
+        // Progress: File (Header & details above the bar, percent beside the bar)
+        _lblFileHeader.Location = new Point(30, 405);
+        _lblFileHeader.Size = new Size(160, 26);
         _lblFileHeader.ForeColor = Theme.Text;
+        _lblFileHeader.TextAlign = ContentAlignment.MiddleLeft;
 
-        _lblFileDetails.Location = new Point(200, 370);
-        _lblFileDetails.Size = new Size(625, 20);
+        _lblFileDetails.Location = new Point(200, 405);
+        _lblFileDetails.Size = new Size(710, 26);
         _lblFileDetails.ForeColor = Theme.MutedText;
-        _lblFileDetails.TextAlign = ContentAlignment.TopRight;
+        _lblFileDetails.TextAlign = ContentAlignment.MiddleRight;
 
-        _pbFile.Location = new Point(25, 394);
-        _pbFile.Size = new Size(800, 12);
+        _pbFile.Location = new Point(30, 434);
+        _pbFile.Size = new Size(880, 14);
 
-        _lblFilePercent.Location = new Point(835, 390);
-        _lblFilePercent.Size = new Size(40, 20);
+        _lblFilePercent.Location = new Point(920, 428);
+        _lblFilePercent.Size = new Size(50, 26);
         _lblFilePercent.Font = Theme.BoldFont;
         _lblFilePercent.ForeColor = Theme.Gold;
         _lblFilePercent.TextAlign = ContentAlignment.MiddleLeft;
 
-        // Progress: Total
-        _lblTotalHeader.Location = new Point(25, 418);
-        _lblTotalHeader.AutoSize = true;
+        // Progress: Total (Header & details above the bar, percent beside the bar)
+        _lblTotalHeader.Location = new Point(30, 462);
+        _lblTotalHeader.Size = new Size(160, 26);
         _lblTotalHeader.ForeColor = Theme.Text;
+        _lblTotalHeader.TextAlign = ContentAlignment.MiddleLeft;
 
-        _lblTotalDetails.Location = new Point(200, 418);
-        _lblTotalDetails.Size = new Size(625, 20);
+        _lblTotalDetails.Location = new Point(200, 462);
+        _lblTotalDetails.Size = new Size(710, 26);
         _lblTotalDetails.ForeColor = Theme.MutedText;
-        _lblTotalDetails.TextAlign = ContentAlignment.TopRight;
+        _lblTotalDetails.TextAlign = ContentAlignment.MiddleRight;
 
-        _pbTotal.Location = new Point(25, 442);
-        _pbTotal.Size = new Size(800, 12);
+        _pbTotal.Location = new Point(30, 491);
+        _pbTotal.Size = new Size(880, 14);
 
-        _lblTotalPercent.Location = new Point(835, 438);
-        _lblTotalPercent.Size = new Size(40, 20);
+        _lblTotalPercent.Location = new Point(920, 485);
+        _lblTotalPercent.Size = new Size(50, 26);
         _lblTotalPercent.Font = Theme.BoldFont;
         _lblTotalPercent.ForeColor = Theme.Gold;
         _lblTotalPercent.TextAlign = ContentAlignment.MiddleLeft;
 
         // Status
-        _lblStatus.Location = new Point(25, 472);
-        _lblStatus.Size = new Size(850, 24);
+        _lblStatus.Location = new Point(30, 526);
+        _lblStatus.Size = new Size(940, 30);
         _lblStatus.ForeColor = Theme.MutedText;
+        _lblStatus.TextAlign = ContentAlignment.MiddleLeft;
         _lblStatus.AutoEllipsis = true;
 
         // Bottom buttons
-        _btnSite.Location = new Point(25, 514);
-        _btnSite.Size = new Size(90, 36);
+        _btnSite.Location = new Point(30, 578);
+        _btnSite.Size = new Size(100, 40);
         _btnSite.Visible = false;
         Theme.ApplyFlatButton(_btnSite);
 
-        _btnForum.Location = new Point(125, 514);
-        _btnForum.Size = new Size(90, 36);
+        _btnForum.Location = new Point(140, 578);
+        _btnForum.Size = new Size(100, 40);
         _btnForum.Visible = false;
         Theme.ApplyFlatButton(_btnForum);
 
-        _btnCabinet.Location = new Point(225, 514);
-        _btnCabinet.Size = new Size(90, 36);
+        _btnCabinet.Location = new Point(250, 578);
+        _btnCabinet.Size = new Size(110, 40);
         _btnCabinet.Visible = false;
         Theme.ApplyFlatButton(_btnCabinet);
 
-        _btnCheckAll.Location = new Point(515, 514);
-        _btnCheckAll.Size = new Size(180, 36);
+        _btnCheckAll.Location = new Point(540, 578);
+        _btnCheckAll.Size = new Size(210, 40);
         Theme.ApplyFlatButton(_btnCheckAll);
 
-        _btnPlay.Location = new Point(710, 508);
-        _btnPlay.Size = new Size(165, 46);
+        _btnPlay.Location = new Point(770, 570);
+        _btnPlay.Size = new Size(200, 54);
         _btnPlay.Enabled = false;
         Theme.ApplyFlatButton(_btnPlay, isPrimary: true);
 
