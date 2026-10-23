@@ -2,6 +2,17 @@
 
 Новые записи сверху: дата, задача, что сделано, файлы, что проверено, что проверить на Windows, вопросы.
 
+## 2026-10-23 — У-3в. Обновление целиком
+
+- Сделано: `UpdateSession` (`LoadManifestAsync`, `LoadFileListAsync`, `UpdateAsync`). Загрузка и проверка манифеста и списка файлов по HTTPS с проверкой подписи и лимита размера (16 МБ); выполнение обновления с определением плана, пофайловой загрузкой, расчётом общего прогресса, применением удалений и гарантированным сохранением кэша хешей даже в случае ошибки (`try` / `finally`).
+- Файлы: `src/L2Updater.Core/UpdateSession.cs`.
+- `dotnet build`: `0 Warning(s)`, `0 Error(s)`.
+- Последняя строка `dotnet test --filter "FullyQualifiedName~UpdateSessionTests"`:
+  `Passed!  - Failed:     0, Passed:    14, Skipped:     0, Total:    14, Duration: 72 ms - L2Updater.Core.Tests.dll (net8.0)`
+- Последняя строка `dotnet test` (все тесты):
+  `Passed!  - Failed:     0, Passed:   302, Skipped:     0, Total:   302, Duration: 177 ms - L2Updater.Core.Tests.dll (net8.0)`
+- Вопросов нет.
+
 ## 2026-10-23 — У-3б. Новости, статус серверов, прогресс
 
 - Сделано:
