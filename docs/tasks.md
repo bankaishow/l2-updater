@@ -103,9 +103,7 @@ dotnet test --filter "FullyQualifiedName~ИМЯ_ТЕСТОВ"
 
 ## У-5. Сборка в GitHub Actions
 
-**Статус:** позже. Перед задачей Claude напишет тесты и заготовки.
-
-- `.github/workflows/build.yml`: на push и pull request — `dotnet test`, `dotnet publish` win-x64 single-file self-contained, артефакт exe. Без секретов в workflow. Это нужно для бесплатной подписи SignPath (подписывают только то, что собрано в CI из публичного кода).
+**Статус:** сделано Claude (2026-10-23). `.github/workflows/build.yml`: на каждый push в main — `dotnet test`, затем `L2Updater.exe` (win-x64, один файл, ~70 МБ) и его SHA-256, артефакт хранится 30 дней. Проект окна `src/L2Updater.App` пока заготовка (окно с версией), наполняется в У-3б. Gemini: эти файлы не меняй.
 
 ## Вопросы к Claude
 

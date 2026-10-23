@@ -15,7 +15,7 @@ Build (Linux or Windows, .NET 8 SDK):
 ```
 dotnet build
 dotnet test
-dotnet publish src/L2Updater.App -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
+dotnet publish src/L2Updater.App -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o publish
 ```
 
 License: MIT.

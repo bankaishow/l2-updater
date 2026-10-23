@@ -11,6 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{D58BDA0B
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "L2Updater.Core.Tests", "tests\L2Updater.Core.Tests\L2Updater.Core.Tests.csproj", "{8BEA7875-D947-4353-918A-F3129ED1E1BC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "L2Updater.App", "src\L2Updater.App\L2Updater.App.csproj", "{68FAEFEB-E7F4-436B-A4A1-A89477C581C5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,9 +30,14 @@ Global
 		{8BEA7875-D947-4353-918A-F3129ED1E1BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8BEA7875-D947-4353-918A-F3129ED1E1BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8BEA7875-D947-4353-918A-F3129ED1E1BC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{68FAEFEB-E7F4-436B-A4A1-A89477C581C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68FAEFEB-E7F4-436B-A4A1-A89477C581C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68FAEFEB-E7F4-436B-A4A1-A89477C581C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68FAEFEB-E7F4-436B-A4A1-A89477C581C5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{CAE7DDAC-1A5E-4E6F-A604-E42F36CCCE40} = {0DA60275-06E3-40A7-A72B-191F0B143D75}
 		{8BEA7875-D947-4353-918A-F3129ED1E1BC} = {D58BDA0B-8D0F-40D9-A10F-8BEDC17002D6}
+		{68FAEFEB-E7F4-436B-A4A1-A89477C581C5} = {0DA60275-06E3-40A7-A72B-191F0B143D75}
 	EndGlobalSection
 EndGlobal
