@@ -172,7 +172,7 @@ dotnet test --filter "FullyQualifiedName~ИМЯ_ТЕСТОВ"
 
 ## У-5. Сборка в GitHub Actions
 
-**Статус:** сделано Claude (2026-10-23). `.github/workflows/build.yml`: на каждый push в main — `dotnet test`, затем `L2Updater.exe` (win-x64, один файл, ~70 МБ) и его SHA-256, артефакт хранится 30 дней. Проект окна `src/L2Updater.App` пока заготовка (окно с версией), наполняется в У-3б. Gemini: эти файлы не меняй.
+**Статус:** сделано Claude (2026-10-23). `.github/workflows/build.yml`: на каждый push в main — `dotnet test`, затем `L2Updater.exe` (win-x64, один файл, ~70 МБ, версия 0.1.<номер сборки>) и его SHA-256, артефакт хранится 30 дней; последний exe всегда по постоянной ссылке релиза `test-build` (тестовый ключ, не для игроков). В заголовке окна версия (`AppConfig.BuildVersion`, строку в `MainForm.ApplyLanguage` добавил Claude). Gemini: `.github/`, `AppConfig.cs` не меняй.
 
 ## Вопросы к Claude
 
