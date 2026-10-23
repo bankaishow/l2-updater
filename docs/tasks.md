@@ -59,7 +59,7 @@ dotnet test --filter "FullyQualifiedName~ИМЯ_ТЕСТОВ"
 
 ## У-1г. Подпись сначала, потом чтение
 
-**Статус:** к работе
+**Статус:** принято (2026-10-23, коммит 442d8d5). Claude проверил: тесты не тронуты, все 164 зелёные, сборка без предупреждений. **У-1 закрыта целиком.**
 
 - Файл: `src/L2Updater.Core/SignedDocuments.cs`: `LoadManifest`, `LoadFileList`.
 - Тесты: `dotnet test --filter "FullyQualifiedName~SignedDocumentsTests"` (Passed: 14), затем **все** тесты: `dotnet test` (Passed: 164).
