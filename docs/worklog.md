@@ -2,6 +2,19 @@
 
 Новые записи сверху: дата, задача, что сделано, файлы, что проверено, что проверить на Windows, вопросы.
 
+## 2026-10-23 — У-3б. Новости, статус серверов, прогресс
+
+- Сделано:
+  - `NewsFeed` (`Clean`, `ParseNews`, `ParseStatus`): очистка текста от управляющих и форматных символов (включая невидимые символы переворота строки вроде U+202E), сжатие пробелов и обрезка по длине; безопасный разбор JSON новостей и статуса серверов с лимитом размера (256 КБ) и количества записей (20); метод никогда не выбрасывает исключений.
+  - `ProgressTracker` (`Report`, `Percent`, `BytesPerSecond`, `Remaining`, `FormatBytes`): отслеживание прогресса, расчёт скорости по скользящему окну 5 секунд с сохранением как минимум двух последних замеров; сброс замеров при новом скачивании (когда байты уменьшились); форматирование байтов в человекочитаемый вид (B, KB, MB, GB).
+- Файлы: `src/L2Updater.Core/NewsFeed.cs`, `src/L2Updater.Core/ProgressTracker.cs`.
+- `dotnet build`: `0 Warning(s)`, `0 Error(s)`.
+- Последняя строка `dotnet test --filter "FullyQualifiedName~NewsFeedTests|FullyQualifiedName~ProgressTrackerTests"`:
+  `Passed!  - Failed:     0, Passed:    47, Skipped:     0, Total:    47, Duration: 42 ms - L2Updater.Core.Tests.dll (net8.0)`
+- Последняя строка `dotnet test` (все тесты; 14 упавших — У-3в):
+  `Failed!  - Failed:    14, Passed:   288, Skipped:     0, Total:   302, Duration: 128 ms - L2Updater.Core.Tests.dll (net8.0)`
+- Вопросов нет.
+
 ## 2026-10-23 — У-3а. Настройки и запуск игры
 
 - Сделано:

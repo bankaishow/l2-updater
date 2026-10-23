@@ -1,3 +1,7 @@
+using System.Globalization;
+using System.Text;
+using System.Text.Json;
+
 namespace L2Updater.Core;
 
 /// <summary>
@@ -17,8 +21,62 @@ public static class NewsFeed
     /// </summary>
     public static IReadOnlyList<NewsItem> ParseNews(byte[]? json)
     {
-        // У-3а (Gemini). Tests: tests/L2Updater.Core.Tests/NewsFeedTests.cs
-        throw new NotImplementedException();
+        // У-3б (Gemini). Tests: tests/L2Updater.Core.Tests/NewsFeedTests.cs
+        if (json == null || json.Length == 0 || json.Length > MaxBytes)
+            return [];
+
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.ValueKind != JsonValueKind.Object ||
+                !doc.RootElement.TryGetProperty("items", out var itemsElement) ||
+                itemsElement.ValueKind != JsonValueKind.Array)
+            {
+                return [];
+            }
+
+            var result = new List<NewsItem>();
+            foreach (var item in itemsElement.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.Object)
+                    continue;
+
+                if (!item.TryGetProperty("title", out var titleProp) || titleProp.ValueKind != JsonValueKind.String)
+                    continue;
+
+                var title = Clean(titleProp.GetString()!, 200);
+                if (title.Length == 0)
+                    continue;
+
+                DateOnly? date = null;
+                if (item.TryGetProperty("date", out var dateProp) && dateProp.ValueKind == JsonValueKind.String)
+                {
+                    if (DateOnly.TryParseExact(dateProp.GetString(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate))
+                        date = parsedDate;
+                }
+
+                string? url = null;
+                if (item.TryGetProperty("url", out var urlProp) && urlProp.ValueKind == JsonValueKind.String)
+                {
+                    var u = urlProp.GetString();
+                    if (!string.IsNullOrEmpty(u) && Uri.TryCreate(u, UriKind.Absolute, out var uri) &&
+                        string.Equals(uri.Scheme, "https", StringComparison.OrdinalIgnoreCase))
+                    {
+                        url = u;
+                    }
+                }
+
+                result.Add(new NewsItem(date, title, url));
+                if (result.Count >= MaxItems)
+                    break;
+            }
+
+            return result;
+        }
+        catch
+        {
+            return [];
+        }
     }
 
     /// <summary>
@@ -27,8 +85,66 @@ public static class NewsFeed
     /// </summary>
     public static IReadOnlyList<ServerStatus> ParseStatus(byte[]? json)
     {
-        // У-3а (Gemini)
-        throw new NotImplementedException();
+        // У-3б (Gemini)
+        if (json == null || json.Length == 0 || json.Length > MaxBytes)
+            return [];
+
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.ValueKind != JsonValueKind.Object ||
+                !doc.RootElement.TryGetProperty("servers", out var serversElement) ||
+                serversElement.ValueKind != JsonValueKind.Array)
+            {
+                return [];
+            }
+
+            var result = new List<ServerStatus>();
+            foreach (var item in serversElement.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.Object)
+                    continue;
+
+                if (!item.TryGetProperty("name", out var nameProp) || nameProp.ValueKind != JsonValueKind.String)
+                    continue;
+
+                var name = Clean(nameProp.GetString()!, 64);
+                if (name.Length == 0)
+                    continue;
+
+                var online = false;
+                if (item.TryGetProperty("online", out var onlineProp) &&
+                    (onlineProp.ValueKind == JsonValueKind.True || onlineProp.ValueKind == JsonValueKind.False))
+                {
+                    online = onlineProp.GetBoolean();
+                }
+
+                int? players = null;
+                if (item.TryGetProperty("players", out var playersProp) && playersProp.ValueKind == JsonValueKind.Number)
+                {
+                    if (playersProp.TryGetInt32(out var p) && p >= 0)
+                        players = p;
+                }
+
+                string? id = null;
+                if (item.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.String)
+                {
+                    var cleanedId = Clean(idProp.GetString()!, 32);
+                    if (cleanedId.Length > 0)
+                        id = cleanedId;
+                }
+
+                result.Add(new ServerStatus(id, name, online, players));
+                if (result.Count >= MaxItems)
+                    break;
+            }
+
+            return result;
+        }
+        catch
+        {
+            return [];
+        }
     }
 
     /// <summary>
@@ -38,7 +154,44 @@ public static class NewsFeed
     /// </summary>
     public static string Clean(string text, int maxLength)
     {
-        // У-3а (Gemini)
-        throw new NotImplementedException();
+        // У-3б (Gemini)
+        if (string.IsNullOrEmpty(text) || maxLength <= 0)
+            return "";
+
+        var sb = new StringBuilder(text.Length);
+        var lastWasSpace = true;
+
+        for (var i = 0; i < text.Length; i++)
+        {
+            var c = text[i];
+            var isSpaceOrFormat = char.IsWhiteSpace(c) || char.IsControl(c) ||
+                                  char.GetUnicodeCategory(c) == UnicodeCategory.Format;
+
+            if (isSpaceOrFormat)
+            {
+                if (!lastWasSpace)
+                {
+                    sb.Append(' ');
+                    lastWasSpace = true;
+                }
+            }
+            else
+            {
+                sb.Append(c);
+                lastWasSpace = false;
+            }
+        }
+
+        while (sb.Length > 0 && sb[^1] == ' ')
+            sb.Length--;
+
+        if (sb.Length > maxLength)
+        {
+            sb.Length = maxLength;
+            while (sb.Length > 0 && sb[^1] == ' ')
+                sb.Length--;
+        }
+
+        return sb.ToString();
     }
 }
