@@ -264,4 +264,29 @@ public class FileDownloaderTests
         var ex = await Assert.ThrowsAsync<UpdateException>(() => Downloader(server).DownloadAsync(Entry, [Mirror1], dir.Path));
         Assert.Contains("close the game", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public async Task Access_denied_on_replace_gives_close_the_game_message()
+    {
+        // Windows answers "access denied" (UnauthorizedAccessException), not only IOException.
+        // Here: the target folder is read-only for the user, File.Move cannot put the file there.
+        if (OperatingSystem.IsWindows() || Environment.UserName == "root")
+            return;
+        using var dir = new TempDir();
+        dir.Write("system/l2.exe", "old version");
+        var folder = dir.File("system");
+        var server = new FakeServer();
+        server.Add(Mirror1 + "system/l2.exe", Content);
+        File.SetUnixFileMode(folder, UnixFileMode.UserRead | UnixFileMode.UserExecute);
+        try
+        {
+            var ex = await Assert.ThrowsAsync<UpdateException>(() => Downloader(server).DownloadAsync(Entry, [Mirror1], dir.Path));
+            Assert.Contains("close the game", ex.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal("old version", File.ReadAllText(dir.File("system/l2.exe")));
+        }
+        finally
+        {
+            File.SetUnixFileMode(folder, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+    }
 }
