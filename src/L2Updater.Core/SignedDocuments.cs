@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace L2Updater.Core;
 
 /// <summary>
@@ -14,7 +16,11 @@ public static class SignedDocuments
     public static Manifest LoadManifest(byte[] json, string signatureBase64, SignatureVerifier verifier, long lastAcceptedSerial)
     {
         // У-1г (Gemini). Tests: tests/L2Updater.Core.Tests/SignedDocumentsTests.cs
-        throw new NotImplementedException();
+        VerifySignature(json, signatureBase64, verifier);
+        var manifest = ManifestParser.ParseManifest(json);
+        if (manifest.Serial < lastAcceptedSerial)
+            throw new ManifestException($"manifest serial {manifest.Serial} is older than accepted {lastAcceptedSerial}");
+        return manifest;
     }
 
     /// <summary>
@@ -23,6 +29,35 @@ public static class SignedDocuments
     public static FileList LoadFileList(byte[] json, string signatureBase64, SignatureVerifier verifier, string expectedClient)
     {
         // У-1г (Gemini). Tests: tests/L2Updater.Core.Tests/SignedDocumentsTests.cs
-        throw new NotImplementedException();
+        VerifySignature(json, signatureBase64, verifier);
+        return ManifestParser.ParseFileList(json, expectedClient);
+    }
+
+    // Steps 1–2: read only key_id, then check the signature of the exact bytes.
+    private static void VerifySignature(byte[] json, string signatureBase64, SignatureVerifier verifier)
+    {
+        ArgumentNullException.ThrowIfNull(verifier);
+        var keyId = ReadKeyIdOnly(json);
+        if (!verifier.Verify(json, signatureBase64, keyId))
+            throw new ManifestException("bad signature");
+    }
+
+    private static string ReadKeyIdOnly(byte[] json)
+    {
+        if (json is null)
+            throw new ManifestException("document is empty");
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.ValueKind == JsonValueKind.Object &&
+                doc.RootElement.TryGetProperty("key_id", out var keyId) &&
+                keyId.ValueKind == JsonValueKind.String)
+                return keyId.GetString()!;
+        }
+        catch (JsonException)
+        {
+            throw new ManifestException("document is not valid JSON");
+        }
+        throw new ManifestException("document has no key_id");
     }
 }
