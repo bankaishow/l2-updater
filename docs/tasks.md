@@ -42,7 +42,7 @@ dotnet test --filter "FullyQualifiedName~ИМЯ_ТЕСТОВ"
 
 ## У-1б. Проверка подписи
 
-**Статус:** к работе
+**Статус:** принято (2026-10-23, коммит ae9be8d). Claude проверил: тесты не тронуты, 11 из 11 (вместе с У-1а 64), сборка без предупреждений. Хорошо: битый доверенный ключ отклоняется сразу при запуске, подпись строго 64 байта.
 
 - Файл: `src/L2Updater.Core/SignatureVerifier.cs`: конструктор, `KeyIdOf`, `Verify`.
 - Тесты: `dotnet test --filter "FullyQualifiedName~SignatureVerifierTests"` (Passed: 11).
@@ -50,7 +50,7 @@ dotnet test --filter "FullyQualifiedName~ИМЯ_ТЕСТОВ"
 
 ## У-1в. Чтение manifest.json и files.json
 
-**Статус:** после принятия У-1б
+**Статус:** к работе
 
 - Файл: `src/L2Updater.Core/ManifestParser.cs`: `ParseManifest`, `ParseFileList`. Можно добавлять свои `private static` методы-помощники в этом же файле.
 - Тесты: `dotnet test --filter "FullyQualifiedName~ManifestParserTests"` (Passed: 86).
