@@ -1,0 +1,17 @@
+{
+  "updater": { "version": "0.1.19", "url": "https://dl.dimythras.com/updater/0.1.0/L2Updater.exe", "sha256": "b945181640a8570835efb39e5dd9cfbc16599ee3b2360602a8c567312f714334", "size": 71631691 },
+  "clients": [
+    {
+      "id": "mythras",
+      "title": { "ru": "L2 High Five Legacy", "en": "L2 High Five Legacy" },
+      "exe": "system/l2.exe",
+      "args": "",
+      "files": "https://dimythras.com/updater/clients/mythras/files.json",
+      "base_urls": ["https://dl.dimythras.com/mythras/"],
+      "servers": []
+    }
+  ],
+  "links": { "site": "https://dimythras.com", "forum": "https://forum.dimythras.com", "cabinet": "https://dimythras.com/cabinet" },
+  "news_url": "https://dimythras.com/api/updater/news",
+  "status_url": "https://dimythras.com/api/updater/status"
+}
