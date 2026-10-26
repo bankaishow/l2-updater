@@ -11,7 +11,7 @@
       "servers": ["mythras_x1"]
     }
   ],
-  "links": { "site": "https://dimythras.com", "forum": "https://dimythras.com/forum", "cabinet": "https://dimythras.com/cabinet" },
+  "links": { "site": "https://dimythras.com", "forum": "https://forum.dimythras.com", "cabinet": "https://dimythras.com/cabinet" },
   "news_url": "https://dimythras.com/api/updater/news",
   "status_url": "https://dimythras.com/api/updater/status"
 }

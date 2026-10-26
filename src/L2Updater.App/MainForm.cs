@@ -314,7 +314,7 @@ internal sealed partial class MainForm : Form
         _btnCheckAll.Text = Strings.Get(_currentLang, "btn_check_all");
         _btnPlay.Text = Strings.Get(_currentLang, "btn_play");
 
-        RefreshClientButtons();
+        RefreshClientList();
         RenderLists();
     }
 }

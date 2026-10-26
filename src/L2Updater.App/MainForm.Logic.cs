@@ -15,7 +15,9 @@ internal sealed partial class MainForm
     private readonly CancellationTokenSource _lifetime = new();
     private readonly HashSet<string> _updatedClients = new(StringComparer.Ordinal);
     private readonly HashSet<string> _warnedFolders = new(StringComparer.OrdinalIgnoreCase);
-    private readonly List<(ClientInfo Client, Button Button)> _clientButtons = [];
+    private readonly ComboBox _cmbClient = new();
+    private List<ClientInfo> _clients = [];
+    private bool _suppressClientEvent;
 
     private UpdaterSettings _settings = new();
     private string _settingsFile = "";
@@ -39,6 +41,16 @@ internal sealed partial class MainForm
         _status = () => T("status_ready");
         _statusColor = Theme.MutedText;
         _lblStatus.Text = _status();
+
+        _cmbClient.DropDownStyle = ComboBoxStyle.DropDownList;
+        _cmbClient.FlatStyle = FlatStyle.Flat;
+        _cmbClient.BackColor = Theme.Panel;
+        _cmbClient.ForeColor = Theme.Text;
+        _cmbClient.Font = Theme.RegularFont;
+        _cmbClient.Location = new Point(0, 2);
+        _cmbClient.Size = new Size(420, 30);
+        _cmbClient.SelectedIndexChanged += async (_, _) => await Guarded(OnClientPickedAsync);
+        _panelClients.Controls.Add(_cmbClient);
 
         Shown += OnShown;
         FormClosing += (_, _) => _lifetime.Cancel();
@@ -129,14 +141,13 @@ internal sealed partial class MainForm
         ApplyManifest(_manifest!);
         _ = LoadExtrasAsync(_manifest!);
 
-        if (_clientButtons.Count == 0)
+        if (_clients.Count == 0)
         {
             SetStatus(() => T("no_clients"), error: true);
             return;
         }
 
-        var selected = _clientButtons.FirstOrDefault(c => c.Client.Id == _settings.LastClient).Client
-                       ?? _clientButtons[0].Client;
+        var selected = _clients.FirstOrDefault(c => c.Id == _settings.LastClient) ?? _clients[0];
         await SelectClientAsync(selected, force: true);
     }
 
@@ -212,29 +223,8 @@ internal sealed partial class MainForm
         _btnForum.Visible = !string.IsNullOrWhiteSpace(manifest.Links?.Forum);
         _btnCabinet.Visible = !string.IsNullOrWhiteSpace(manifest.Links?.Cabinet);
 
-        foreach (var (_, button) in _clientButtons)
-            button.Dispose();
-        _clientButtons.Clear();
-        _panelClients.Controls.Clear();
-
-        foreach (var client in manifest.Clients)
-        {
-            var button = new Button
-            {
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                Margin = new Padding(0, 0, (int)(8 * Dpi96), 0),
-                Padding = new Padding((int)(10 * Dpi96), 0, (int)(10 * Dpi96), 0),
-                MinimumSize = new Size(0, (int)(34 * Dpi96)),
-            };
-            Theme.ApplyFlatButton(button);
-            var captured = client;
-            button.Click += async (_, _) => await Guarded(() => SelectClientAsync(captured, force: false));
-            _clientButtons.Add((client, button));
-            _panelClients.Controls.Add(button);
-        }
-
-        RefreshClientButtons();
+        _clients = manifest.Clients.ToList();
+        RefreshClientList();
     }
 
     // ---- clients ----
@@ -246,16 +236,33 @@ internal sealed partial class MainForm
         return client.Id;
     }
 
-    private void RefreshClientButtons()
+    /// <summary>Fills the drop-down with the client titles (current language) and selects the current client.</summary>
+    private void RefreshClientList()
     {
-        foreach (var (client, button) in _clientButtons)
+        _suppressClientEvent = true;
+        try
         {
-            button.Text = ClientTitle(client);
-            var selected = _client != null && _client.Id == client.Id;
-            button.BackColor = selected ? Theme.Gold : Theme.Panel;
-            button.ForeColor = selected ? Theme.Background : Theme.Text;
-            button.Font = selected ? Theme.BoldFont : Theme.RegularFont;
+            _cmbClient.Items.Clear();
+            foreach (var client in _clients) _cmbClient.Items.Add(ClientTitle(client));
+            _cmbClient.SelectedIndex = _client == null ? -1 : _clients.FindIndex(c => c.Id == _client.Id);
         }
+        finally
+        {
+            _suppressClientEvent = false;
+        }
+    }
+
+    private async Task OnClientPickedAsync()
+    {
+        if (_suppressClientEvent) return;
+        var index = _cmbClient.SelectedIndex;
+        if (index < 0 || index >= _clients.Count) return;
+        if (_busy)
+        {
+            RefreshClientList();
+            return;
+        }
+        await SelectClientAsync(_clients[index], force: false);
     }
 
     private async Task SelectClientAsync(ClientInfo client, bool force)
@@ -266,7 +273,7 @@ internal sealed partial class MainForm
         _client = client;
         _settings.LastClient = client.Id;
         SaveSettings();
-        RefreshClientButtons();
+        RefreshClientList();
         RefreshFolderLabel();
         await RunUpdateAsync(fullCheck: false);
     }
@@ -467,7 +474,7 @@ internal sealed partial class MainForm
 
     private void UpdateControls()
     {
-        foreach (var (_, button) in _clientButtons) button.Enabled = !_busy;
+        _cmbClient.Enabled = !_busy;
         _btnChangeFolder.Enabled = !_busy && _client != null;
         _btnCheckAll.Enabled = !_busy;
         _btnPlay.Enabled = !_busy && _client != null && _updatedClients.Contains(_client.Id) && GetFolder(_client) != null;
