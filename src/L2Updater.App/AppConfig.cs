@@ -9,11 +9,11 @@ internal static class AppConfig
     /// <summary>
     /// Public keys (SubjectPublicKeyInfo DER, base64) the updater trusts for manifest.json and files.json.
     /// The private keys never leave the publisher's machine.
-    /// TEST KEY (key_id 923a1f0c7dd9e1ae): for the test stand only, replace with the release key before giving the updater to players.
+    /// Release key (generated 2026-10-26 on the owner's Windows machine).
     /// </summary>
     public static readonly string[] TrustedKeys =
     [
-        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEk5vQLowa5OiwaDhQo4PXAQq/z447S4J3qMe+ztWyIrEXGkdtBUc1jMziN5C7c9PfUN2BrB0eXUS3fpU4/GUHqA==",
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEmYpYFsND7/qmyX2bbs2r7arquuwcj85pFIZmklnZqFVdTVz2QPjfp+xgJrr9Vjm9jHLcfuKcKLU3e/y3qshQIQ==",
     ];
 
     /// <summary>Build version for the window title (the CI build sets 0.1.&lt;run number&gt;).</summary>
