@@ -1,0 +1,17 @@
+{
+  "updater": { "version": "0.1.0", "url": "https://dl.example.com/updater/L2Updater.exe", "sha256": "<64 hex>", "size": 70000000 },
+  "clients": [
+    {
+      "id": "mythras",
+      "title": { "ru": "High Five (Mythras)", "en": "High Five (Mythras)" },
+      "exe": "system/l2.exe",
+      "args": "",
+      "files": "https://dimythras.com/updater/clients/mythras/files.json",
+      "base_urls": ["https://dl.example.com/mythras/"],
+      "servers": ["mythras_x1"]
+    }
+  ],
+  "links": { "site": "https://dimythras.com", "forum": "https://dimythras.com/forum", "cabinet": "https://dimythras.com/cabinet" },
+  "news_url": "https://dimythras.com/api/updater/news",
+  "status_url": "https://dimythras.com/api/updater/status"
+}
