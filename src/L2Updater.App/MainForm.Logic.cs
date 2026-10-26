@@ -342,7 +342,7 @@ internal sealed partial class MainForm
         var folder = GetFolder(client) ?? PickFolder(client);
         if (folder == null)
         {
-            SetStatus(() => T("folder_required"));
+            SetStatus(() => $"{ClientTitle(client)}: {T("folder_required")}");
             UpdateControls();
             return;
         }
@@ -354,7 +354,7 @@ internal sealed partial class MainForm
         var running = true;
         try
         {
-            SetStatus(() => T("status_checking"));
+            SetStatus(() => $"{ClientTitle(client)}: {T("status_checking")}");
             var list = await _session.LoadFileListAsync(client, _lifetime.Token);
 
             var sizes = new Dictionary<string, long>(StringComparer.Ordinal);
@@ -394,9 +394,9 @@ internal sealed partial class MainForm
             _lblFilePercent.Text = "100%";
             _lblTotalPercent.Text = "100%";
             if (result.Downloaded == 0)
-                SetStatus(() => T("status_all_ok"));
+                SetStatus(() => $"{ClientTitle(client)}: {T("status_all_ok")}");
             else
-                SetStatus(() => T("status_done", result.Downloaded, result.Deleted));
+                SetStatus(() => $"{ClientTitle(client)}: {T("status_done", result.Downloaded, result.Deleted)}");
         }
         catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
         {
