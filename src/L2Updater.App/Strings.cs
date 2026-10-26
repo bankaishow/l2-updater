@@ -4,7 +4,7 @@ internal static class Strings
 {
     private static readonly Dictionary<string, string> Ru = new(StringComparer.Ordinal)
     {
-        ["app_title"] = "L2 ZALUPA",
+        ["app_title"] = "Dimythras Game",
         ["client_label"] = "Клиент:",
         ["folder_label"] = "Папка:",
         ["btn_change_folder"] = "Изменить…",
@@ -48,7 +48,7 @@ internal static class Strings
 
     private static readonly Dictionary<string, string> En = new(StringComparer.Ordinal)
     {
-        ["app_title"] = "L2 ZALUPA",
+        ["app_title"] = "Dimythras Game",
         ["client_label"] = "Client:",
         ["folder_label"] = "Folder:",
         ["btn_change_folder"] = "Change…",
