@@ -4,7 +4,7 @@ namespace L2Updater.App;
 internal static class AppConfig
 {
     /// <summary>Used when updater.ini has no manifest_url.</summary>
-    public const string DefaultManifestUrl = "https://l2zalupa.com/updater/manifest.json";
+    public const string DefaultManifestUrl = "https://dimythras.com/updater/manifest.json";
 
     /// <summary>
     /// Public keys (SubjectPublicKeyInfo DER, base64) the updater trusts for manifest.json and files.json.
