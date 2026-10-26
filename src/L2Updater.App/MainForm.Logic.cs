@@ -392,7 +392,17 @@ internal sealed partial class MainForm
                 _lblTotalDetails.Text = TotalDetails(p, tracker);
             });
 
-            var result = await _session.UpdateAsync(client, list, folder, fullCheck, progress, _lifetime.Token);
+            var scanProgress = new Progress<ScanProgress>(p =>
+            {
+                if (!running || IsDisposed) return;
+                var percent = p.BytesTotal > 0 ? (int)(p.BytesDone * 100 / p.BytesTotal) : 100;
+                _pbTotal.Value = Math.Clamp(percent, 0, 100);
+                _lblTotalPercent.Text = percent + "%";
+                _lblFileDetails.Text = $"{T("status_checking")} {p.FileIndex} / {p.FileCount}";
+                _lblTotalDetails.Text = $"{ProgressTracker.FormatBytes(p.BytesDone)} / {ProgressTracker.FormatBytes(p.BytesTotal)}";
+            });
+
+            var result = await _session.UpdateAsync(client, list, folder, fullCheck, progress, _lifetime.Token, scanProgress);
             running = false;
             _updatedClients.Add(client.Id);
 
@@ -490,8 +500,23 @@ internal sealed partial class MainForm
         if (folder == null) return;
         try
         {
-            Process.Start(GameLauncher.BuildStartInfo(client, folder));
+            var startInfo = GameLauncher.BuildStartInfo(client, folder);
+            try
+            {
+                Process.Start(startInfo);
+            }
+            catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 740)
+            {
+                // Манифест l2.exe требует администратора: запускаем через оболочку, Windows покажет окно UAC.
+                startInfo.UseShellExecute = true;
+                startInfo.Verb = "runas";
+                Process.Start(startInfo);
+            }
             WindowState = FormWindowState.Minimized;
+        }
+        catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
+        {
+            // Игрок отказался в окне UAC: это не ошибка.
         }
         catch (Exception ex)
         {

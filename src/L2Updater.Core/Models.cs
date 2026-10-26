@@ -59,5 +59,11 @@ public sealed record ServerStatus(string? Id, string Name, bool Online, int? Pla
 /// </summary>
 public sealed record UpdateProgress(int FileIndex, int FileCount, string CurrentPath, long BytesDone, long BytesTotal);
 
+/// <summary>
+/// Progress of the file check before downloading (UpdatePlanner.Plan).
+/// FileIndex is 1-based; BytesDone and BytesTotal are for all files of the list that are not user files.
+/// </summary>
+public sealed record ScanProgress(int FileIndex, int FileCount, long BytesDone, long BytesTotal);
+
 /// <summary>What an update did.</summary>
 public sealed record UpdateResult(int Downloaded, int Deleted, int UpToDate, int UserKept);

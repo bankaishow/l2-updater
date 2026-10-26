@@ -52,7 +52,8 @@ public sealed class UpdateSession(HttpClient http, SignatureVerifier verifier)
     /// An exception from a download stops the update (it is passed on); the cache is still saved.
     /// </summary>
     public async Task<UpdateResult> UpdateAsync(ClientInfo client, FileList list, string gameRoot, bool fullCheck,
-        IProgress<UpdateProgress>? progress = null, CancellationToken cancellationToken = default)
+        IProgress<UpdateProgress>? progress = null, CancellationToken cancellationToken = default,
+        IProgress<ScanProgress>? scanProgress = null)
     {
         // У-3в (Gemini)
         ArgumentNullException.ThrowIfNull(client);
@@ -64,7 +65,8 @@ public sealed class UpdateSession(HttpClient http, SignatureVerifier verifier)
         var cache = fullCheck ? new HashCache() : HashCache.Load(cacheFile);
 
         // 2. plan
-        var plan = UpdatePlanner.Plan(list, gameRoot, cache);
+        // Хеширование идёт минуты: не в потоке окна, иначе оно «не отвечает».
+        var plan = await Task.Run(() => UpdatePlanner.Plan(list, gameRoot, cache, scanProgress, cancellationToken), cancellationToken);
 
         // 3. download
         var totalBytes = plan.Download.Sum(f => f.Size);

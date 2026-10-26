@@ -26,15 +26,25 @@ public static class UpdatePlanner
     ///   equal to entry.Sha256 → UpToDate, else Download.
     /// For each path of list.Delete: goes to Delete only if a FILE exists there (folders are never deleted).
     /// </summary>
-    public static UpdatePlan Plan(FileList list, string gameRoot, HashCache cache)
+    public static UpdatePlan Plan(FileList list, string gameRoot, HashCache cache,
+        IProgress<ScanProgress>? progress = null, CancellationToken cancellationToken = default)
     {
-        // У-2а (Gemini)
+        // У-2а (Gemini); progress и отмена добавлены Claude: проверка 12 ГБ длится минуты
         var download = new List<FileEntry>();
         var upToDate = 0;
         var userKept = 0;
+        var count = list.Files.Count;
+        var totalBytes = list.Files.Where(f => !f.User).Sum(f => f.Size);
+        var scannedBytes = 0L;
+        var index = 0;
 
         foreach (var entry in list.Files)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            index++;
+            if (!entry.User) scannedBytes += entry.Size;
+            progress?.Report(new ScanProgress(index, count, scannedBytes, totalBytes));
+
             var info = new FileInfo(PathGuard.Resolve(gameRoot, entry.Path));
             if (!info.Exists)
             {
