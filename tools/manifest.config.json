@@ -1,5 +1,5 @@
 {
-  "updater": { "version": "0.1.19", "url": "https://dl.dimythras.com/updater/0.1.0/L2Updater.exe", "sha256": "b945181640a8570835efb39e5dd9cfbc16599ee3b2360602a8c567312f714334", "size": 71631691 },
+  "updater": { "version": "0.1.22", "url": "https://dl.dimythras.com/updater/0.1.22/L2Updater.exe", "sha256": "ac1c38955fd72283d994b9a49fb1b1b37ea57d177aa4e9134963f497b6fad072", "size": 71633004 },
   "clients": [
     {
       "id": "mythras",
