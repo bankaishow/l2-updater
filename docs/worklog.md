@@ -2,6 +2,13 @@
 
 Новые записи сверху: дата, задача, что сделано, файлы, что проверено, что проверить на Windows, вопросы.
 
+## 2026-10-26 — У-3г2 (Claude)
+
+- Владелец передал проект Claude. Логика окна в `MainForm.Logic.cs` (partial), надписи в `Strings.cs`.
+- Шаги 1–4 `StartupAsync`/`LoadManifestAsync`; 5 `ApplyManifest`/`SelectClientAsync`; 6 `ApplyManifest`/`OpenUrl`; 7 `LoadExtrasAsync`/`FetchLimitedAsync`; 8 `RunUpdateAsync`; 9 `CheckAllAsync`/`ChangeFolderAsync`; 10 `Play`; 11 `FormClosing` отменяет `_lifetime`; 12 `ToggleLanguage`/`ApplyLanguage`.
+- `dotnet build`: 0 предупреждений, 0 ошибок. `dotnet test`: Passed!  - Failed:     0, Passed:   302.
+- Проверить на Windows: запуск, выбор папки, обновление, прогресс, кнопки, RU/EN.
+
 ## 2026-10-23 — У-3г1. Доработка (масштабирование DPI и увеличение окна до 1000×680)
 
 - Сделано:

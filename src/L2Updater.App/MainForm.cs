@@ -2,7 +2,7 @@ using System.Drawing;
 
 namespace L2Updater.App;
 
-internal sealed class MainForm : Form
+internal sealed partial class MainForm : Form
 {
     private string _currentLang = "ru";
     private string? CurrentFolderPath { get; set; }
@@ -52,6 +52,7 @@ internal sealed class MainForm : Form
         InitializeWindow();
         InitializeControls();
         ApplyLanguage();
+        HookLogic();
 
         ResumeLayout(false);
         PerformLayout();
@@ -137,6 +138,8 @@ internal sealed class MainForm : Form
 
         _panelNews.Controls.Add(_lblNewsHeader);
         _panelNews.Controls.Add(_lblNoNews);
+        InitializeList(_newsList, new Point(14, 50), new Size(552, 175));
+        _panelNews.Controls.Add(_newsList);
 
         // Servers Panel
         _panelServers.Location = new Point(630, 150);
@@ -161,6 +164,8 @@ internal sealed class MainForm : Form
 
         _panelServers.Controls.Add(_lblServersHeader);
         _panelServers.Controls.Add(_lblNoServers);
+        InitializeList(_serversList, new Point(14, 50), new Size(312, 175));
+        _panelServers.Controls.Add(_serversList);
 
         // Progress: File (Header & details above the bar, percent beside the bar)
         _lblFileHeader.Location = new Point(30, 405);
@@ -263,6 +268,8 @@ internal sealed class MainForm : Form
     private void ToggleLanguage()
     {
         _currentLang = string.Equals(_currentLang, "ru", StringComparison.OrdinalIgnoreCase) ? "en" : "ru";
+        _settings.Language = _currentLang;
+        SaveSettings();
         ApplyLanguage();
     }
 
@@ -274,10 +281,9 @@ internal sealed class MainForm : Form
 
         _lblClientHeader.Text = Strings.Get(_currentLang, "client_label");
         _lblFolderHeader.Text = Strings.Get(_currentLang, "folder_label");
-        if (string.IsNullOrEmpty(CurrentFolderPath))
-            _lblFolderPath.Text = Strings.Get(_currentLang, "empty_folder");
-        else
-            _lblFolderPath.Text = CurrentFolderPath;
+        _lblFolderPath.Text = string.IsNullOrEmpty(CurrentFolderPath)
+            ? Strings.Get(_currentLang, "empty_folder")
+            : CurrentFolderPath;
 
         _btnChangeFolder.Text = Strings.Get(_currentLang, "btn_change_folder");
         _lblNewsHeader.Text = Strings.Get(_currentLang, "news_title");
@@ -286,20 +292,30 @@ internal sealed class MainForm : Form
         _lblNoServers.Text = Strings.Get(_currentLang, "no_servers");
 
         _lblFileHeader.Text = Strings.Get(_currentLang, "file_label");
-        _lblFileDetails.Text = Strings.Get(_currentLang, "zero_bytes");
-        _lblFilePercent.Text = Strings.Get(_currentLang, "zero_percent");
+        if (!_busy)
+        {
+            _lblFileDetails.Text = Strings.Get(_currentLang, "zero_bytes");
+            _lblFilePercent.Text = Strings.Get(_currentLang, "zero_percent");
+        }
 
         _lblTotalHeader.Text = Strings.Get(_currentLang, "total_label");
-        _lblTotalDetails.Text = Strings.Get(_currentLang, "zero_bytes");
-        _lblTotalPercent.Text = Strings.Get(_currentLang, "zero_percent");
+        if (!_busy)
+        {
+            _lblTotalDetails.Text = Strings.Get(_currentLang, "zero_bytes");
+            _lblTotalPercent.Text = Strings.Get(_currentLang, "zero_percent");
+        }
 
-        _lblStatus.Text = Strings.Get(_currentLang, "status_ready");
+        _lblStatus.Text = _status();
+        _lblStatus.ForeColor = _statusColor;
 
         _btnSite.Text = Strings.Get(_currentLang, "btn_site");
         _btnForum.Text = Strings.Get(_currentLang, "btn_forum");
         _btnCabinet.Text = Strings.Get(_currentLang, "btn_cabinet");
         _btnCheckAll.Text = Strings.Get(_currentLang, "btn_check_all");
         _btnPlay.Text = Strings.Get(_currentLang, "btn_play");
+
+        RefreshClientButtons();
+        RenderLists();
     }
 }
 
