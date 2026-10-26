@@ -42,6 +42,8 @@ internal static class Strings
         ["less_than_minute"] = "< 1 мин",
         ["minutes"] = "{0} мин",
         ["per_second"] = "/с",
+        ["status_self_update"] = "Обновление программы до версии {0}…",
+        ["err_self_update"] = "Не удалось обновить программу: {0}",
     };
 
     private static readonly Dictionary<string, string> En = new(StringComparer.Ordinal)
@@ -84,6 +86,8 @@ internal static class Strings
         ["less_than_minute"] = "< 1 min",
         ["minutes"] = "{0} min",
         ["per_second"] = "/s",
+        ["status_self_update"] = "Updating the program to version {0}…",
+        ["err_self_update"] = "Could not update the program: {0}",
     };
 
     public static string Get(string language, string key)

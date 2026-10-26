@@ -82,6 +82,7 @@ internal sealed partial class MainForm
     {
         var folder = UpdaterSettings.ChooseFolder(AppContext.BaseDirectory,
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
+        if (Environment.ProcessPath is { } self) SelfUpdater.CleanUp(self);
         _settingsFile = Path.Combine(folder, UpdaterSettings.FileName);
         _settings = UpdaterSettings.Load(_settingsFile);
         _currentLang = string.Equals(_settings.Language, "en", StringComparison.OrdinalIgnoreCase) ? "en" : "ru";
@@ -123,6 +124,8 @@ internal sealed partial class MainForm
             if (!IsDisposed) UpdateControls();
         }
 
+        if (await SelfUpdateAsync(_manifest!)) return;
+
         ApplyManifest(_manifest!);
         _ = LoadExtrasAsync(_manifest!);
 
@@ -135,6 +138,72 @@ internal sealed partial class MainForm
         var selected = _clientButtons.FirstOrDefault(c => c.Client.Id == _settings.LastClient).Client
                        ?? _clientButtons[0].Client;
         await SelectClientAsync(selected, force: true);
+    }
+
+    // ---- self-update (task У-4) ----
+
+    private const string UpdatedFlag = "--updated";
+
+    /// <summary>
+    /// Downloads a newer updater, swaps the exe and starts it. True = the new copy was started and this window closes.
+    /// Any failure only shows a message; the game update goes on with the current version.
+    /// The flag stops a restart loop if the new exe still looks older than the manifest says.
+    /// </summary>
+    private async Task<bool> SelfUpdateAsync(Manifest manifest)
+    {
+        var exe = Environment.ProcessPath;
+        if (exe == null || !exe.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(Path.GetFileName(exe), "L2Updater.exe", StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (Environment.GetCommandLineArgs().Contains(UpdatedFlag)) return false;
+        var info = manifest.Updater;
+        if (info == null || !SelfUpdater.IsNewer(AppConfig.BuildVersion, info.Version)) return false;
+
+        _busy = true;
+        ResetProgress();
+        UpdateControls();
+        try
+        {
+            SetStatus(() => T("status_self_update", info.Version));
+            var progress = new Progress<long>(done =>
+            {
+                if (IsDisposed || !_busy) return;
+                var percent = (int)(done * 100 / info.Size);
+                _pbTotal.Value = percent;
+                _lblTotalPercent.Text = percent + "%";
+                _lblTotalDetails.Text = $"{ProgressTracker.FormatBytes(done)} / {ProgressTracker.FormatBytes(info.Size)}";
+            });
+            var newFile = await new SelfUpdater(_http!).DownloadAsync(info, exe, progress, _lifetime.Token);
+            SelfUpdater.Replace(exe, newFile);
+            try
+            {
+                Process.Start(new ProcessStartInfo(exe, UpdatedFlag) { UseShellExecute = false });
+            }
+            catch
+            {
+                // The new exe is in place but did not start: put the old one back.
+                File.Move(exe, newFile, overwrite: true);
+                File.Move(exe + SelfUpdater.OldSuffix, exe, overwrite: true);
+                throw;
+            }
+            Close();
+            return true;
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        {
+            return true;
+        }
+        catch (Exception ex)
+        {
+            if (!IsDisposed)
+                SetStatus(() => T("err_self_update", ex is OperationCanceledException ? T("err_timeout") : ex.Message), error: true);
+            return false;
+        }
+        finally
+        {
+            _busy = false;
+            if (!IsDisposed) UpdateControls();
+        }
     }
 
     private void ApplyManifest(Manifest manifest)

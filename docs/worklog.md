@@ -2,6 +2,13 @@
 
 Новые записи сверху: дата, задача, что сделано, файлы, что проверено, что проверить на Windows, вопросы.
 
+## 2026-10-26 — У-4 (Claude)
+
+- `SelfUpdater` (Core): `IsNewer`, `DownloadAsync` (https, лимит 300 МБ, размер и SHA-256, при ошибке .new удаляется), `Replace` (exe → .old, .new → exe, откат), `CleanUp`. Тесты `SelfUpdaterTests.cs`.
+- Окно: после загрузки манифеста, если `manifest.updater.version` выше `BuildVersion`, скачивает, подменяет, запускает новый exe с `--updated` (защита от цикла) и закрывается. Ошибка: сообщение, обновление игры идёт дальше. Работает только для файла `L2Updater.exe`.
+- `dotnet test`: Passed!  - Failed:     0, Passed:   320, Skipped:     0, Total:   320, Duration: 142 ms - L2Updater.Core.Tests.dll (net8.0)
+- Проверить на Windows: подложить в manifest более высокую версию, убедиться, что окно перезапускается и `.old` потом исчезает.
+
 ## 2026-10-26 — У-3г2 (Claude)
 
 - Владелец передал проект Claude. Логика окна в `MainForm.Logic.cs` (partial), надписи в `Strings.cs`.
