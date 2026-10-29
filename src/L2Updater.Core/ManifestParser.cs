@@ -209,6 +209,8 @@ public static class ManifestParser
                 var path = item.GetString()!;
                 if (!PathGuard.IsValidRelativePath(path))
                     throw Fail($"invalid delete path: {path}");
+                if (IsServiceFolderPath(path))
+                    throw Fail($"delete path is in the updater's own folder: {path}");
                 if (paths.Contains(path))
                     throw Fail($"path is both in files and delete: {path}");
                 delete.Add(path);
@@ -216,6 +218,14 @@ public static class ManifestParser
         }
 
         return new FileList(format, keyId, client, version, files, delete);
+    }
+
+    // The updater keeps its cache and partial downloads in ".l2updater" in the game folder: no list may touch it.
+    private static bool IsServiceFolderPath(string path)
+    {
+        var slash = path.IndexOf('/');
+        var first = slash < 0 ? path : path[..slash];
+        return string.Equals(first, ".l2updater", StringComparison.OrdinalIgnoreCase);
     }
 
     private static FileEntry ReadFileEntry(JsonElement element)
@@ -226,6 +236,8 @@ public static class ManifestParser
         var path = ReadString(element, "path");
         if (!PathGuard.IsValidRelativePath(path))
             throw Fail($"invalid file path: {path}");
+        if (IsServiceFolderPath(path))
+            throw Fail($"file path is in the updater's own folder: {path}");
         var size = ReadLong(element, "size", min: 0);
         var sha256 = ReadSha256(element);
 
