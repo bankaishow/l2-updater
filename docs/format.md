@@ -36,6 +36,7 @@ All files are UTF-8 JSON. Every signed document is published as two files: `<nam
 ```
 
 - `serial` grows with every publication. The updater stores the highest serial it has accepted and **rejects an older one** (rollback protection).
+- `guard` (optional, client field): relative path of a guard program inside the game folder, e.g. `"system/L2Sec.Agent.exe"` (same path rules as `exe`). The program is an ordinary file of `files.json`. Before starting the game the window runs it without a window (30 s limit, killed after that) and reads its exit code: `10` (virtual machine), `30` (server not trusted), `40` (server refused) stop the launch with a message; every other code, a crash, a timeout or a missing file lets the game start (the game server decides who may log in). No `guard` field: nothing is run. The updater does not read or send anything itself.
 - `id`: `[a-z0-9_]{1,32}`. Unknown fields are ignored (forward compatibility); missing required fields reject the document.
 - All URLs must be `https://`.
 - `news_url` / `status_url` are **not** signed data, just display data: shown as plain text, never executed, never used to choose files.

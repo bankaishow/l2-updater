@@ -60,7 +60,7 @@ internal sealed partial class MainForm
         _btnCabinet.Click += (_, _) => OpenUrl(_manifest?.Links?.Cabinet);
         _btnChangeFolder.Click += async (_, _) => await Guarded(ChangeFolderAsync);
         _btnCheckAll.Click += async (_, _) => await Guarded(CheckAllAsync);
-        _btnPlay.Click += (_, _) => Play();
+        _btnPlay.Click += async (_, _) => await PlayAsync();
 
         UpdateControls();
     }
@@ -492,7 +492,7 @@ internal sealed partial class MainForm
 
     // ---- play, links ----
 
-    private void Play()
+    private async Task PlayAsync()
     {
         var client = _client;
         if (client == null) return;
@@ -501,6 +501,7 @@ internal sealed partial class MainForm
         try
         {
             var startInfo = GameLauncher.BuildStartInfo(client, folder);
+            if (!await RunGuardAsync(client, folder)) return;
             try
             {
                 Process.Start(startInfo);
@@ -518,9 +519,52 @@ internal sealed partial class MainForm
         {
             // Игрок отказался в окне UAC: это не ошибка.
         }
+        catch (OperationCanceledException)
+        {
+            // Окно закрывается.
+        }
         catch (Exception ex)
         {
             SetStatus(() => T("err_launch", ex.Message), error: true);
+        }
+    }
+
+    /// <summary>
+    /// Запускает защитную программу клиента (поле guard в манифесте), если она есть, и читает код выхода.
+    /// false — игру запускать нельзя, причина уже показана в строке состояния.
+    /// </summary>
+    private async Task<bool> RunGuardAsync(ClientInfo client, string folder)
+    {
+        var info = GuardRunner.BuildStartInfo(client, folder);
+        if (info == null) return true;
+
+        var previousStatus = _status;
+        _busy = true;
+        UpdateControls();
+        try
+        {
+            SetStatus(() => $"{ClientTitle(client)}: {T("status_guard")}");
+            var exitCode = await GuardRunner.RunAsync(info, GuardRunner.DefaultTimeout, _lifetime.Token);
+            switch (GuardRunner.Decide(exitCode))
+            {
+                case GuardDecision.BlockVirtualMachine:
+                    SetStatus(() => T("guard_vm"), error: true);
+                    return false;
+                case GuardDecision.BlockUntrustedServer:
+                    SetStatus(() => T("guard_untrusted"), error: true);
+                    return false;
+                case GuardDecision.BlockRejected:
+                    SetStatus(() => T("guard_rejected"), error: true);
+                    return false;
+                default:
+                    SetStatus(previousStatus);
+                    return true;
+            }
+        }
+        finally
+        {
+            _busy = false;
+            UpdateControls();
         }
     }
 

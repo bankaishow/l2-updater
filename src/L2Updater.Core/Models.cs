@@ -22,7 +22,8 @@ public sealed record ClientInfo(
     string Args,
     string Files,
     IReadOnlyList<string> BaseUrls,
-    IReadOnlyList<string> Servers);
+    IReadOnlyList<string> Servers,
+    string? Guard = null);
 
 public sealed record Links(string? Site, string? Forum, string? Cabinet);
 

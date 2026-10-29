@@ -143,7 +143,17 @@ public static class ManifestParser
             }
         }
 
-        return new ClientInfo(id, title, exe, args, files, baseUrls, servers);
+        string? guard = null;
+        if (Optional(element, "guard", out var guardElement))
+        {
+            if (guardElement.ValueKind != JsonValueKind.String)
+                throw Fail("client guard must be a string");
+            guard = guardElement.GetString()!;
+            if (!PathGuard.IsValidRelativePath(guard))
+                throw Fail("client guard is not a valid relative path");
+        }
+
+        return new ClientInfo(id, title, exe, args, files, baseUrls, servers, guard);
     }
 
     /// <summary>
