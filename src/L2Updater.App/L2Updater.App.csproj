@@ -14,6 +14,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Assets\*.jpg" />
+    <EmbeddedResource Include="Assets\*.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\L2Updater.Core\L2Updater.Core.csproj" />
   </ItemGroup>
 

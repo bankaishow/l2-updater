@@ -57,7 +57,7 @@ public sealed class UpdateSession(HttpClient http, SignatureVerifier verifier)
     /// </summary>
     public async Task<UpdateResult> UpdateAsync(ClientInfo client, FileList list, string gameRoot, bool fullCheck,
         IProgress<UpdateProgress>? progress = null, CancellationToken cancellationToken = default,
-        IProgress<ScanProgress>? scanProgress = null)
+        IProgress<ScanProgress>? scanProgress = null, PauseGate? pause = null)
     {
         // У-3в (Gemini)
         ArgumentNullException.ThrowIfNull(client);
@@ -82,6 +82,7 @@ public sealed class UpdateSession(HttpClient http, SignatureVerifier verifier)
             for (var i = 0; i < count; i++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                if (pause != null) await pause.WaitAsync(cancellationToken);
 
                 var entry = plan.Download[i];
                 var fileIndex = i + 1;
@@ -94,7 +95,7 @@ public sealed class UpdateSession(HttpClient http, SignatureVerifier verifier)
                     })
                     : null;
 
-                await downloader.DownloadAsync(entry, client.BaseUrls, gameRoot, fileProgress, cancellationToken);
+                await downloader.DownloadAsync(entry, client.BaseUrls, gameRoot, fileProgress, cancellationToken, pause);
 
                 finishedBytes += entry.Size;
 

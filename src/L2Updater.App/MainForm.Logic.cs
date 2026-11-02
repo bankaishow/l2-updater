@@ -13,6 +13,11 @@ internal sealed partial class MainForm
     private readonly Panel _serversList = new();
 
     private readonly CancellationTokenSource _lifetime = new();
+    private readonly PauseGate _pause = new();
+    private readonly System.Windows.Forms.Timer _doneTimer = new() { Interval = 40 };
+    private DateTime _doneStarted;
+    private UpdateProgress? _lastProgress;
+    private bool _resetTracker;
     private readonly HashSet<string> _updatedClients = new(StringComparer.Ordinal);
     private readonly HashSet<string> _warnedFolders = new(StringComparer.OrdinalIgnoreCase);
     private readonly ComboBox _cmbClient = new();
@@ -48,12 +53,19 @@ internal sealed partial class MainForm
         _cmbClient.ForeColor = Theme.Text;
         _cmbClient.Font = Theme.RegularFont;
         _cmbClient.Location = new Point(0, 2);
-        _cmbClient.Size = new Size(420, 30);
+        _cmbClient.Size = new Size(258, 28);
         _cmbClient.SelectedIndexChanged += async (_, _) => await Guarded(OnClientPickedAsync);
         _panelClients.Controls.Add(_cmbClient);
 
         Shown += OnShown;
-        FormClosing += (_, _) => _lifetime.Cancel();
+        FormClosing += (_, _) =>
+        {
+            _lifetime.Cancel();
+            _pause.Resume();
+            _doneTimer.Stop();
+        };
+        _doneTimer.Tick += OnDoneTick;
+        _btnPause.Click += (_, _) => TogglePause();
 
         _btnSite.Click += (_, _) => OpenUrl(_manifest?.Links?.Site);
         _btnForum.Click += (_, _) => OpenUrl(_manifest?.Links?.Forum);
@@ -69,7 +81,7 @@ internal sealed partial class MainForm
     {
         list.Location = location;
         list.Size = size;
-        list.BackColor = Theme.Panel;
+        list.BackColor = Color.Transparent;
         list.AutoScroll = true;
         list.Visible = false;
     }
@@ -373,6 +385,14 @@ internal sealed partial class MainForm
             var progress = new Progress<UpdateProgress>(p =>
             {
                 if (!running || IsDisposed) return;
+                _lastProgress = p;
+                if (_pause.IsPaused) return; // a late report after the Pause click must not overwrite the "paused" line
+                if (_resetTracker)
+                {
+                    tracker = new ProgressTracker(TimeProvider.System); // speed and time left restart after a pause
+                    _resetTracker = false;
+                }
+                if (!_btnPause.Visible) _btnPause.Visible = true;
                 if (p.CurrentPath != lastPath)
                 {
                     if (lastPath != null && sizes.TryGetValue(lastPath, out var done)) finishedBytes += done;
@@ -402,14 +422,11 @@ internal sealed partial class MainForm
                 _lblTotalDetails.Text = $"{ProgressTracker.FormatBytes(p.BytesDone)} / {ProgressTracker.FormatBytes(p.BytesTotal)}";
             });
 
-            var result = await _session.UpdateAsync(client, list, folder, fullCheck, progress, _lifetime.Token, scanProgress);
+            var result = await _session.UpdateAsync(client, list, folder, fullCheck, progress, _lifetime.Token, scanProgress, _pause);
             running = false;
             _updatedClients.Add(client.Id);
 
-            _pbFile.Value = 100;
-            _pbTotal.Value = 100;
-            _lblFilePercent.Text = "100%";
-            _lblTotalPercent.Text = "100%";
+            ShowDone();
             if (result.Downloaded == 0)
                 SetStatus(() => $"{ClientTitle(client)}: {T("status_all_ok")}");
             else
@@ -428,9 +445,75 @@ internal sealed partial class MainForm
         {
             running = false;
             _busy = false;
-            if (!IsDisposed) UpdateControls();
+            _pause.Resume();
+            if (!IsDisposed)
+            {
+                _btnPause.Visible = false;
+                _btnPause.Text = T("btn_pause");
+                UpdateControls();
+            }
         }
     }
+
+    // ---- pause and "done" ----
+
+    private void TogglePause()
+    {
+        if (_pause.IsPaused)
+        {
+            _pause.Resume();
+            _resetTracker = true;
+            _btnPause.Text = T("btn_pause");
+            return;
+        }
+
+        _pause.Pause();
+        _btnPause.Text = T("btn_resume");
+        if (_lastProgress is { } p)
+            _lblTotalDetails.Text = $"{ProgressTracker.FormatBytes(p.BytesDone)} / {ProgressTracker.FormatBytes(p.BytesTotal)} · {T("paused")}";
+    }
+
+    private Control[] ProgressRows => [_lblFileHeader, _lblFileDetails, _pbFile, _lblFilePercent,
+        _lblTotalHeader, _lblTotalDetails, _pbTotal, _lblTotalPercent];
+
+    /// <summary>The update is over: all progress texts and bars go away (no "less than a minute" left at 100%), "DONE" blinks in gold.</summary>
+    private void ShowDone()
+    {
+        foreach (var c in ProgressRows) c.Visible = false;
+        _btnPause.Visible = false;
+        _lblDone.Text = T("done_big");
+        _lblDone.ForeColor = Theme.Gold;
+        _lblDone.Visible = true;
+        _doneStarted = DateTime.UtcNow;
+        _doneTimer.Start();
+    }
+
+    private void HideDone()
+    {
+        _doneTimer.Stop();
+        _lblDone.Visible = false;
+        foreach (var c in ProgressRows) c.Visible = true;
+    }
+
+    /// <summary>Gold pulses between full and dim for 6 seconds (5 slow beats), then stays full gold.</summary>
+    private void OnDoneTick(object? sender, EventArgs e)
+    {
+        var t = (DateTime.UtcNow - _doneStarted).TotalSeconds;
+        if (t >= 6)
+        {
+            _lblDone.ForeColor = Theme.Gold;
+            _doneTimer.Stop();
+            return;
+        }
+        var k = (1 + Math.Cos(2 * Math.PI * t / 1.2)) / 2; // 1 = full gold, 0 = dim
+        var dim = Blend(Theme.Panel, Theme.Gold, 0.22);
+        _lblDone.ForeColor = Blend(dim, Theme.Gold, k);
+    }
+
+    private static Color Blend(Color from, Color to, double k) => Color.FromArgb(
+        (int)(from.R + (to.R - from.R) * k),
+        (int)(from.G + (to.G - from.G) * k),
+        (int)(from.B + (to.B - from.B) * k));
 
     private string TotalDetails(UpdateProgress p, ProgressTracker tracker)
     {
@@ -446,6 +529,10 @@ internal sealed partial class MainForm
 
     private void ResetProgress()
     {
+        HideDone();
+        _pause.Resume();
+        _lastProgress = null;
+        _resetTracker = false;
         _pbFile.Value = 0;
         _pbTotal.Value = 0;
         _lblFilePercent.Text = T("zero_percent");
@@ -677,7 +764,7 @@ internal sealed partial class MainForm
                 Size = new Size(width, rowHeight),
                 Text = row.Text,
                 ForeColor = row.Color,
-                BackColor = Theme.Panel,
+                BackColor = Color.Transparent,
                 TextAlign = ContentAlignment.MiddleLeft,
                 AutoEllipsis = true,
             };

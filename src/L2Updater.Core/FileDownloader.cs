@@ -42,9 +42,11 @@ public sealed class FileDownloader(HttpClient http)
     /// 7. <paramref name="progress"/> gets the number of bytes of this file downloaded so far
     ///    (including resumed bytes); the last report equals entry.Size.
     /// 8. Cancellation → OperationCanceledException, existing target untouched (the partial file may stay for resume).
+    /// 9. <paramref name="pause"/> paused (window button): the connection is closed, the partial file stays, the call waits
+    ///    until Resume and continues with a Range request; cancellation while waiting → OperationCanceledException.
     /// </summary>
     public async Task DownloadAsync(FileEntry entry, IReadOnlyList<string> baseUrls, string gameRoot,
-        IProgress<long>? progress = null, CancellationToken cancellationToken = default)
+        IProgress<long>? progress = null, CancellationToken cancellationToken = default, PauseGate? pause = null)
     {
         // У-2б (Gemini)
         ArgumentNullException.ThrowIfNull(entry);
@@ -69,110 +71,17 @@ public sealed class FileDownloader(HttpClient http)
                 continue;
             }
 
-            Directory.CreateDirectory(partDir);
-
-            // 3. Partial file checks
-            long existingLength = 0;
-            if (File.Exists(partFile))
+            // Pause: the attempt stops (connection closed, partial file kept), we wait and ask the same mirror again.
+            AttemptResult result;
+            while (true)
             {
-                var fi = new FileInfo(partFile);
-                if (fi.Length >= entry.Size)
-                {
-                    TryDeleteFile(partFile);
-                }
-                else
-                {
-                    existingLength = fi.Length;
-                }
+                if (pause != null) await pause.WaitAsync(cancellationToken);
+                result = await TryMirrorAsync(entry, baseUrl, partDir, partFile, progress, cancellationToken, pause);
+                if (result != AttemptResult.Paused) break;
             }
 
-            var url = UrlOf(baseUrl, entry.Path);
-            using var request = new HttpRequestMessage(HttpMethod.Get, url);
-            if (existingLength > 0)
+            if (result == AttemptResult.Done)
             {
-                request.Headers.Range = new RangeHeaderValue(existingLength, null);
-            }
-
-            HttpResponseMessage response;
-            try
-            {
-                response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-            }
-            catch (HttpRequestException)
-            {
-                TryDeleteFile(partFile);
-                continue;
-            }
-
-            using (response)
-            {
-                var append = false;
-                if (existingLength > 0 && response.StatusCode == HttpStatusCode.PartialContent)
-                {
-                    append = true;
-                }
-                else if (response.StatusCode == HttpStatusCode.OK)
-                {
-                    append = false;
-                    existingLength = 0;
-                }
-                else
-                {
-                    TryDeleteFile(partFile);
-                    continue;
-                }
-
-                var downloaded = existingLength;
-                var mirrorFailed = false;
-
-                try
-                {
-                    using (var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken))
-                    using (var fileStream = new FileStream(partFile, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.None))
-                    {
-                        var buffer = new byte[81920];
-                        while (true)
-                        {
-                            var read = await responseStream.ReadAsync(buffer.AsMemory(), cancellationToken);
-                            if (read == 0)
-                                break;
-
-                            downloaded += read;
-                            if (downloaded > entry.Size)
-                            {
-                                mirrorFailed = true;
-                                break;
-                            }
-
-                            await fileStream.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
-                            progress?.Report(downloaded);
-                        }
-                    }
-
-                    if (entry.Size == 0 && downloaded == 0)
-                    {
-                        progress?.Report(0);
-                    }
-                }
-                catch (HttpRequestException)
-                {
-                    mirrorFailed = true;
-                }
-
-                if (mirrorFailed || downloaded != entry.Size)
-                {
-                    TryDeleteFile(partFile);
-                    continue;
-                }
-
-                // 4. Verify SHA-256
-                var hash = UpdatePlanner.Sha256OfFile(partFile);
-                if (!string.Equals(hash, entry.Sha256, StringComparison.OrdinalIgnoreCase))
-                {
-                    TryDeleteFile(partFile);
-                    continue;
-                }
-
                 success = true;
                 break;
             }
@@ -204,6 +113,130 @@ public sealed class FileDownloader(HttpClient http)
         {
             TryDeleteFile(partFile);
             throw new UpdateException($"Failed to replace '{entry.Path}'. Please close the game and try again: {ex.Message}");
+        }
+    }
+
+    private enum AttemptResult { Done, Failed, Paused }
+
+    /// <summary>One try with one mirror (rules 3 and 4 of DownloadAsync). Paused = stopped on request, partial file kept.</summary>
+    private async Task<AttemptResult> TryMirrorAsync(FileEntry entry, string baseUrl, string partDir, string partFile,
+        IProgress<long>? progress, CancellationToken cancellationToken, PauseGate? pause)
+    {
+        Directory.CreateDirectory(partDir);
+
+        // 3. Partial file checks
+        long existingLength = 0;
+        if (File.Exists(partFile))
+        {
+            var fi = new FileInfo(partFile);
+            if (fi.Length >= entry.Size)
+            {
+                TryDeleteFile(partFile);
+            }
+            else
+            {
+                existingLength = fi.Length;
+            }
+        }
+
+        var url = UrlOf(baseUrl, entry.Path);
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        if (existingLength > 0)
+        {
+            request.Headers.Range = new RangeHeaderValue(existingLength, null);
+        }
+
+        HttpResponseMessage response;
+        try
+        {
+            response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        }
+        catch (HttpRequestException)
+        {
+            TryDeleteFile(partFile);
+            return AttemptResult.Failed;
+        }
+
+        using (response)
+        {
+            var append = false;
+            if (existingLength > 0 && response.StatusCode == HttpStatusCode.PartialContent)
+            {
+                append = true;
+            }
+            else if (response.StatusCode == HttpStatusCode.OK)
+            {
+                append = false;
+                existingLength = 0;
+            }
+            else
+            {
+                TryDeleteFile(partFile);
+                return AttemptResult.Failed;
+            }
+
+            var downloaded = existingLength;
+            var mirrorFailed = false;
+            var paused = false;
+
+            try
+            {
+                using (var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken))
+                using (var fileStream = new FileStream(partFile, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    var buffer = new byte[81920];
+                    while (true)
+                    {
+                        if (pause is { IsPaused: true } && downloaded < entry.Size)
+                        {
+                            paused = true;
+                            break;
+                        }
+
+                        var read = await responseStream.ReadAsync(buffer.AsMemory(), cancellationToken);
+                        if (read == 0)
+                            break;
+
+                        downloaded += read;
+                        if (downloaded > entry.Size)
+                        {
+                            mirrorFailed = true;
+                            break;
+                        }
+
+                        await fileStream.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+                        progress?.Report(downloaded);
+                    }
+                }
+
+                if (entry.Size == 0 && downloaded == 0)
+                {
+                    progress?.Report(0);
+                }
+            }
+            catch (HttpRequestException)
+            {
+                mirrorFailed = true;
+            }
+
+            if (paused)
+                return AttemptResult.Paused;
+
+            if (mirrorFailed || downloaded != entry.Size)
+            {
+                TryDeleteFile(partFile);
+                return AttemptResult.Failed;
+            }
+
+            // 4. Verify SHA-256
+            var hash = UpdatePlanner.Sha256OfFile(partFile);
+            if (!string.Equals(hash, entry.Sha256, StringComparison.OrdinalIgnoreCase))
+            {
+                TryDeleteFile(partFile);
+                return AttemptResult.Failed;
+            }
+
+            return AttemptResult.Done;
         }
     }
 
