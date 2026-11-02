@@ -62,9 +62,12 @@ def load_key(path):
         pass  # encrypted
     for _ in range(3):
         password = getpass.getpass(f"Password for {path}: ").encode()
+        if not password:
+            print("Empty password: type it again (nothing is shown while typing).")
+            continue
         try:
             return serialization.load_pem_private_key(data, password=password)
-        except ValueError:
+        except (ValueError, TypeError):
             print("Wrong password.")
     raise SystemExit("wrong password")
 
