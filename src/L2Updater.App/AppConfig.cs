@@ -14,6 +14,8 @@ internal static class AppConfig
     public static readonly string[] TrustedKeys =
     [
         "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEmYpYFsND7/qmyX2bbs2r7arquuwcj85pFIZmklnZqFVdTVz2QPjfp+xgJrr9Vjm9jHLcfuKcKLU3e/y3qshQIQ==",
+        // Spare key (2026-11-02): private part is kept offline, never used for signing until the main key is lost.
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEjUBHcruaplgpTCi3EfHtYPeXmS7iwFRm36GFGYpybVrUQlycQbeyiM/2KKMm21q4w4oeKRWKOAgK2oHUxtfjfA==",
     ];
 
     /// <summary>Build version for the window title (the CI build sets 0.1.&lt;run number&gt;).</summary>
