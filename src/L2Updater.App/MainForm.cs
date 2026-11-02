@@ -2,7 +2,7 @@ using System.Drawing;
 
 namespace L2Updater.App;
 
-internal sealed partial class MainForm : Form
+internal sealed partial class MainForm : Form, IBackgroundHost
 {
     private string _currentLang = "ru";
     private string? CurrentFolderPath { get; set; }
@@ -72,17 +72,24 @@ internal sealed partial class MainForm : Form
         ForeColor = Theme.Text;
         Font = Theme.RegularFont;
         DoubleBuffered = true;
+        if (Skin.LoadIcon() is { } icon) Icon = icon;
     }
 
     // Picture, glass panels, logo and frame are drawn once for the current window size (Skin.RenderBackground).
-    protected override void OnPaintBackground(PaintEventArgs e)
+    public Bitmap GetBackground()
     {
         if (_background == null || _background.Size != ClientSize)
         {
             _background?.Dispose();
             _background = Skin.RenderBackground(ClientSize, [_panelNews.Bounds, _panelServers.Bounds]);
         }
-        e.Graphics.DrawImage(_background, 0, 0, _background.Width, _background.Height); // explicit size: DrawImageUnscaled would follow the screen DPI
+        return _background;
+    }
+
+    protected override void OnPaintBackground(PaintEventArgs e)
+    {
+        var background = GetBackground();
+        e.Graphics.DrawImage(background, 0, 0, background.Width, background.Height); // explicit size: DrawImageUnscaled would follow the screen DPI
     }
 
     protected override void Dispose(bool disposing)

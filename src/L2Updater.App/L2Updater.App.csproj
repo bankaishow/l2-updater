@@ -11,11 +11,13 @@
     <RootNamespace>L2Updater.App</RootNamespace>
     <Version>0.1.0</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Assets\*.jpg" />
     <EmbeddedResource Include="Assets\*.png" />
+    <EmbeddedResource Include="Assets\*.ico" />
   </ItemGroup>
 
   <ItemGroup>

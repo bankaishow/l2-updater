@@ -3,6 +3,34 @@ using System.Drawing.Drawing2D;
 
 namespace L2Updater.App;
 
+/// <summary>The window that owns the background picture (MainForm).</summary>
+internal interface IBackgroundHost
+{
+    Bitmap GetBackground();
+}
+
+/// <summary>
+/// Own controls do not use WinForms "transparent" painting (it showed other controls' texts under the buttons):
+/// they copy the piece of the window background that lies behind them.
+/// </summary>
+internal static class Backdrop
+{
+    public static void Draw(Graphics g, Control control)
+    {
+        var form = control.FindForm();
+        if (form is IBackgroundHost host)
+        {
+            var origin = form.PointToClient(control.PointToScreen(Point.Empty));
+            g.DrawImage(host.GetBackground(), new Rectangle(0, 0, control.Width, control.Height),
+                origin.X, origin.Y, control.Width, control.Height, GraphicsUnit.Pixel);
+        }
+        else
+        {
+            g.Clear(Theme.Background);
+        }
+    }
+}
+
 /// <summary>Button in the style of the design: cut corners, gold frame; the main one is filled with gold.</summary>
 internal sealed class GoldButton : Button
 {
@@ -14,10 +42,15 @@ internal sealed class GoldButton : Button
     public GoldButton()
     {
         SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer |
-                 ControlStyles.ResizeRedraw | ControlStyles.SupportsTransparentBackColor, true);
+                 ControlStyles.ResizeRedraw, true);
         FlatStyle = FlatStyle.Flat;
-        BackColor = Color.Transparent;
+        BackColor = Theme.Background;
         Cursor = Cursors.Hand;
+    }
+
+    protected override void OnPaintBackground(PaintEventArgs e)
+    {
+        // the background is copied in OnPaint
     }
 
     protected override void OnMouseEnter(EventArgs e) { _hover = true; Invalidate(); base.OnMouseEnter(e); }
@@ -30,6 +63,7 @@ internal sealed class GoldButton : Button
     protected override void OnPaint(PaintEventArgs e)
     {
         var g = e.Graphics;
+        Backdrop.Draw(g, this);
         g.SmoothingMode = SmoothingMode.AntiAlias;
         var rect = new RectangleF(0.5f, 0.5f, Width - 2f, Height - 2f);
         var cut = Primary ? Math.Min(14f, Height * 0.22f) : Math.Min(9f, Height * 0.22f);
@@ -104,13 +138,19 @@ internal sealed class GoldProgressBar : Control
     public GoldProgressBar()
     {
         SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer |
-                 ControlStyles.ResizeRedraw | ControlStyles.SupportsTransparentBackColor, true);
-        BackColor = Color.Transparent;
+                 ControlStyles.ResizeRedraw, true);
+        BackColor = Theme.Background;
+    }
+
+    protected override void OnPaintBackground(PaintEventArgs e)
+    {
+        // the background is copied in OnPaint
     }
 
     protected override void OnPaint(PaintEventArgs e)
     {
         var g = e.Graphics;
+        Backdrop.Draw(g, this);
         g.SmoothingMode = SmoothingMode.AntiAlias;
         var rect = new RectangleF(0.5f, 0.5f, Width - 2f, Height - 2f);
         var radius = rect.Height / 2f;

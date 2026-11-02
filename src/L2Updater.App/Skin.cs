@@ -38,6 +38,23 @@ internal static class Skin
         }
     }
 
+    /// <summary>Window and taskbar icon (Assets/app.ico, embedded); null if it cannot be read.</summary>
+    public static Icon? LoadIcon()
+    {
+        try
+        {
+            var asm = Assembly.GetExecutingAssembly();
+            var name = asm.GetManifestResourceNames().FirstOrDefault(n => n.EndsWith(".app.ico", StringComparison.OrdinalIgnoreCase));
+            if (name == null) return null;
+            using var stream = asm.GetManifestResourceStream(name);
+            return stream == null ? null : new Icon(stream);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     /// <summary>Rectangle with cut corners (like the frames of the design).</summary>
     public static GraphicsPath Chamfer(RectangleF r, float cut)
     {
