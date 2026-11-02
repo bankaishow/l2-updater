@@ -65,6 +65,8 @@ internal sealed class FakeServer : HttpMessageHandler
 
     public void Add(string url, byte[] content) => _files[url] = content;
 
+    public byte[] Get(string url) => _files[url];
+
     /// <summary>Requests to this URL throw HttpRequestException (network error).</summary>
     public void Break(string url) => _broken.Add(url);
 

@@ -138,6 +138,25 @@ public class UpdateSessionTests : IDisposable
         await Assert.ThrowsAsync<ManifestException>(() => Session().LoadFileListAsync(other));
     }
 
+    [Fact]
+    public async Task File_list_matching_the_manifest_hash_is_accepted()
+    {
+        PublishFiles([("system/l2.exe", Bytes.Of("exe"), false)]);
+        var hash = Bytes.Sha256(_server.Get(Cdn + "files.json"));
+        var list = await Session().LoadFileListAsync(Client() with { FilesSha256 = hash });
+        Assert.Single(list.Files);
+    }
+
+    [Fact]
+    public async Task File_list_not_matching_the_manifest_hash_is_rejected()
+    {
+        // an old, correctly signed list: the signature is fine, but it is not the one the manifest names
+        PublishFiles([("system/l2.exe", Bytes.Of("old exe"), false)]);
+        var ex = await Assert.ThrowsAsync<ManifestException>(() =>
+            Session().LoadFileListAsync(Client() with { FilesSha256 = new string('0', 64) }));
+        Assert.Contains("manifest", ex.Message);
+    }
+
     // ---------- update ----------
 
     [Fact]

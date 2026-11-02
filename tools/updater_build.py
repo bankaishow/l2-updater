@@ -7,7 +7,8 @@ Needs Python 3.9+ and the `cryptography` package. The private key never leaves t
                                                            encrypted with a password you type)
   updater_build.py protect  --key OLD.pem [--out NEW.pem]  (encrypts an existing unprotected key, same public key)
   updater_build.py files    --key K.pem --client ID --version V --root GAMEDIR --out OUT [--user PATH]... [--delete PATH]...
-  updater_build.py manifest --key K.pem --config manifest.config.json --out OUT
+  updater_build.py manifest --key K.pem --config manifest.config.json --out OUT [--valid-days N]
+                                                           (needs OUT/clients/ID/files.json from "files": puts its SHA-256 into the manifest)
   updater_build.py verify   --key K.pem|K.spki.b64 FILE.json   (checks FILE.json against FILE.json.sig;
                                                            the .spki.b64 public key needs no password)
 """
@@ -201,6 +202,17 @@ def cmd_manifest(a):
     for name in ("updater", "clients", "links", "news_url", "status_url"):
         if name in cfg:
             doc[name] = cfg[name]
+    # files_sha256: the manifest names the exact files.json of each client (protects against an old signed list).
+    # So: build "files" first, then "manifest", and publish both together.
+    out = Path(a.out)
+    for c in doc["clients"]:
+        fj = out / "clients" / c["id"] / "files.json"
+        if not fj.is_file():
+            raise SystemExit(f"{fj} not found: run 'files' for client {c['id']!r} with the same --out first")
+        c["files_sha256"] = hashlib.sha256(fj.read_bytes()).hexdigest()
+    if a.valid_days:
+        doc["expires_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() + a.valid_days * 86400))
+        print(f"manifest expires at {doc['expires_at']}: publish a new one before that, or updating stops")
     urls = [u for c in cfg["clients"] for u in [c["files"], *c["base_urls"]]]
     urls += [cfg["updater"]["url"]] if "updater" in cfg else []
     for u in urls:
@@ -232,6 +244,7 @@ def main():
     s.set_defaults(fn=cmd_files)
     s = sub.add_parser("manifest")
     s.add_argument("--key", required=True); s.add_argument("--config", required=True); s.add_argument("--out", required=True)
+    s.add_argument("--valid-days", type=int, default=0, help="add expires_at = now + N days (0 = no expiry)")
     s.set_defaults(fn=cmd_manifest)
     s = sub.add_parser("verify"); s.add_argument("--key", required=True); s.add_argument("file")
     s.set_defaults(fn=cmd_verify)

@@ -29,12 +29,16 @@ public sealed class UpdateSession(HttpClient http, SignatureVerifier verifier)
         return SignedDocuments.LoadManifest(manifestBytes, sigText, _verifier, lastAcceptedSerial);
     }
 
-    /// <summary>Same for client.Files (+ ".sig"), then SignedDocuments.LoadFileList(..., client.Id).</summary>
+    /// <summary>Same for client.Files (+ ".sig"); if client.FilesSha256 is set, SHA-256 of the downloaded bytes must match it (else ManifestException); then SignedDocuments.LoadFileList(..., client.Id).</summary>
     public async Task<FileList> LoadFileListAsync(ClientInfo client, CancellationToken cancellationToken = default)
     {
         // У-3в (Gemini)
         ArgumentNullException.ThrowIfNull(client);
         var fileListBytes = await FetchBytesAsync(client.Files, cancellationToken);
+        // files.json is bound to the signed manifest: an old, correctly signed list is not accepted.
+        if (client.FilesSha256 is { } expected &&
+            !string.Equals(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(fileListBytes)), expected, StringComparison.OrdinalIgnoreCase))
+            throw new ManifestException("files.json does not match the manifest (old or replaced list)");
         var sigBytes = await FetchBytesAsync(client.Files + ".sig", cancellationToken);
         var sigText = Encoding.UTF8.GetString(sigBytes).Trim();
         return SignedDocuments.LoadFileList(fileListBytes, sigText, _verifier, client.Id);

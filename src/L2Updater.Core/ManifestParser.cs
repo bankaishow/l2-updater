@@ -67,7 +67,15 @@ public static class ManifestParser
         var newsUrl = OptionalHttps(root, "news_url");
         var statusUrl = OptionalHttps(root, "status_url");
 
-        return new Manifest(format, keyId, serial, issuedAt, updater, clients, links, newsUrl, statusUrl);
+        DateTimeOffset? expiresAt = null;
+        if (Optional(root, "expires_at", out var expiresElement))
+        {
+            if (expiresElement.ValueKind != JsonValueKind.String || !expiresElement.TryGetDateTimeOffset(out var expires))
+                throw Fail("expires_at must be an ISO 8601 date");
+            expiresAt = expires;
+        }
+
+        return new Manifest(format, keyId, serial, issuedAt, updater, clients, links, newsUrl, statusUrl, expiresAt);
     }
 
     private static UpdaterInfo ReadUpdater(JsonElement element)
@@ -153,7 +161,15 @@ public static class ManifestParser
                 throw Fail("client guard is not a valid relative path");
         }
 
-        return new ClientInfo(id, title, exe, args, files, baseUrls, servers, guard);
+        string? filesSha256 = null;
+        if (Optional(element, "files_sha256", out var filesShaElement))
+        {
+            if (filesShaElement.ValueKind != JsonValueKind.String || !IsLowerHex(filesShaElement.GetString()!, 64))
+                throw Fail("client files_sha256 must be 64 lowercase hex characters");
+            filesSha256 = filesShaElement.GetString()!;
+        }
+
+        return new ClientInfo(id, title, exe, args, files, baseUrls, servers, guard, filesSha256);
     }
 
     /// <summary>

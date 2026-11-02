@@ -11,7 +11,8 @@ public sealed record Manifest(
     IReadOnlyList<ClientInfo> Clients,
     Links? Links,
     string? NewsUrl,
-    string? StatusUrl);
+    string? StatusUrl,
+    DateTimeOffset? ExpiresAt = null);
 
 public sealed record UpdaterInfo(string Version, string Url, string Sha256, long Size);
 
@@ -23,7 +24,8 @@ public sealed record ClientInfo(
     string Files,
     IReadOnlyList<string> BaseUrls,
     IReadOnlyList<string> Servers,
-    string? Guard = null);
+    string? Guard = null,
+    string? FilesSha256 = null);
 
 public sealed record Links(string? Site, string? Forum, string? Cabinet);
 

@@ -11,15 +11,20 @@ public static class SignedDocuments
     /// 1) read only "key_id" from the JSON (no key_id or not JSON → ManifestException);
     /// 2) verifier.Verify(json, signatureBase64, keyId) is false → ManifestException, message contains the word "signature";
     /// 3) ManifestParser.ParseManifest(json);
-    /// 4) manifest.Serial &lt; lastAcceptedSerial → ManifestException (equal is allowed).
+    /// 4) manifest.Serial &lt; lastAcceptedSerial → ManifestException (equal is allowed);
+    /// 5) manifest.ExpiresAt is set and <paramref name="now"/> (default: the clock) is not before it → ManifestException
+    ///    (message contains "expired"): protects against a frozen, old but correctly signed manifest.
     /// </summary>
-    public static Manifest LoadManifest(byte[] json, string signatureBase64, SignatureVerifier verifier, long lastAcceptedSerial)
+    public static Manifest LoadManifest(byte[] json, string signatureBase64, SignatureVerifier verifier, long lastAcceptedSerial,
+        DateTimeOffset? now = null)
     {
         // У-1г (Gemini). Tests: tests/L2Updater.Core.Tests/SignedDocumentsTests.cs
         VerifySignature(json, signatureBase64, verifier);
         var manifest = ManifestParser.ParseManifest(json);
         if (manifest.Serial < lastAcceptedSerial)
             throw new ManifestException($"manifest serial {manifest.Serial} is older than accepted {lastAcceptedSerial}");
+        if (manifest.ExpiresAt is { } expiresAt && (now ?? DateTimeOffset.UtcNow) >= expiresAt)
+            throw new ManifestException($"manifest expired at {expiresAt:u}; check the date and time of this computer");
         return manifest;
     }
 
