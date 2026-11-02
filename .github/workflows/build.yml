@@ -17,9 +17,9 @@ jobs:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
       DOTNET_NOLOGO: 1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           dotnet-version: 8.0.x
 
@@ -37,14 +37,14 @@ jobs:
       - name: SHA-256
         run: sha256sum publish/L2Updater.exe | tee publish/L2Updater.exe.sha256
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: L2Updater-${{ github.sha }}
           path: publish/
           retention-days: 30
 
   # Latest test build for manual checks on Windows: one fixed link, no login needed.
-  # Uses the test signing key; not for players.
+  # Automatic build of main for checks on Windows; NOT an official release (releases: release.yml, tags v*).
   test-build:
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -52,7 +52,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: L2Updater-${{ github.sha }}
           path: publish
@@ -67,4 +67,4 @@ jobs:
           gh release create test-build publish/L2Updater.exe publish/L2Updater.exe.sha256 \
             --target "$GITHUB_SHA" --prerelease \
             --title "Test build 0.1.$RUN" \
-            --notes "Automatic test build 0.1.$RUN of commit $GITHUB_SHA. Test signing key, not for players."
+            --notes "Automatic test build 0.1.$RUN of commit $GITHUB_SHA. Automatic build of main for testing, not an official release. Players get the program from the site."
