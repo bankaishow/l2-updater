@@ -145,3 +145,15 @@
 - [ ] Форум `https://forum.dimythras.com` ещё не работает; ссылка в манифесте оставлена.
 - [ ] Проверить «только для чтения» (замена и удаление файлов с этим атрибутом, У-2б).
 - [ ] Проверка на чистой Windows после выпуска пакетной версии и после включения `guard`.
+
+## Включение защиты (guard): пошагово
+
+Делается, когда в журнале обмена есть боевые значения Claude сервера и боевая сборка Agent от Claude анти-чита. Ключи сборки и пароли в репозиторий и в чат не попадают. Агент берём только боевой (не тестовый для .155).
+
+1. **Положить Agent в эталонный клиент.** Папку `dist/agent/` (около 187 файлов) целиком в подпапку `system\l2sec` эталонной папки (команды даёт Claude анти-чита, папка лежит на виртуалке `tunel1`; на Windows это просто копирование):
+   `robocopy <папка dist\agent> E:\PORTABLE_GAMES\dimythras-release\system\l2sec /E`
+2. **В R2** (не `sync`): `rclone copy E:\PORTABLE_GAMES\dimythras-release r2:dimythras-files/mythras --progress`. Проверка: `rclone check E:\PORTABLE_GAMES\dimythras-release r2:dimythras-files/mythras --one-way` → `0 differences found`.
+3. **Пересобрать `files.json`** (команда из «Шага 2» выше, `--version` с новой датой, например `2026.11.03-1`, тот же набор `--user`).
+4. **В `tools/manifest.config.json`** клиенту добавить `"guard": "system/l2sec/L2Sec.Agent.exe"` (это делает Claude апдейтера, коммит по «да»). Пересобрать манифест (`--valid-days 90`), `verify`, выложить `files.json`, `.sig` и манифест на сайт (`scp` → `docker cp` → `chown`). Сначала файлы в R2, потом документы на сайт.
+5. **Проверка на ПК:** обновить клиент (докачает `system\l2sec`), нажать «Играть»: агент запускается сам, в логе сервера появляется `<confirm ... parts=4 agent=...>`.
+6. **Порядок на сервере** (Claude сервера): приём при `RequireClientGuard=False` → проверка клиентов 273 и 542 → `RequireClientGuard=True` → позже `MinLauncherVersion`. Откат: убрать `guard` из манифеста и выложить новый манифест (или `RequireClientGuard=False`).
