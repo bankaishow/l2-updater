@@ -50,6 +50,29 @@ public class GuardRunnerTests
         Assert.Equal(Path.GetFullPath(dir.File("system")), info.WorkingDirectory);
         Assert.False(info.UseShellExecute);
         Assert.True(info.CreateNoWindow);
+        Assert.Equal(new[] { "run" }, info.ArgumentList);
+    }
+
+    [Fact]
+    public void Start_info_passes_launcher_version()
+    {
+        using var dir = new TempDir();
+        dir.Write("system/L2Sec.Agent.exe", "x");
+        var info = GuardRunner.BuildStartInfo(Client("system/L2Sec.Agent.exe"), dir.Path, "0.3.0");
+        Assert.Equal(new[] { "run", "--launcher-version", "0.3.0" }, info!.ArgumentList);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("0.3.0 --evil")]
+    [InlineData("v1")]
+    [InlineData("1.2.3.4.5.6.7.8.9.10.11")]
+    public void Start_info_drops_a_bad_launcher_version(string version)
+    {
+        using var dir = new TempDir();
+        dir.Write("system/L2Sec.Agent.exe", "x");
+        var info = GuardRunner.BuildStartInfo(Client("system/L2Sec.Agent.exe"), dir.Path, version);
+        Assert.Equal(new[] { "run" }, info!.ArgumentList);
     }
 
     [Fact]
@@ -67,6 +90,7 @@ public class GuardRunnerTests
     [InlineData(20)]
     [InlineData(50)]
     [InlineData(60)]
+    [InlineData(71)]
     [InlineData(99)]
     [InlineData(-1)]
     public void These_codes_let_the_game_start(int code) =>
@@ -75,6 +99,10 @@ public class GuardRunnerTests
     [Fact]
     public void No_exit_code_lets_the_game_start() =>
         Assert.Equal(GuardDecision.Allow, GuardRunner.Decide(null));
+
+    [Fact]
+    public void Outdated_launcher_blocks() =>
+        Assert.Equal(GuardDecision.BlockOutdatedLauncher, GuardRunner.Decide(70));
 
     [Fact]
     public void Virtual_machine_blocks() =>

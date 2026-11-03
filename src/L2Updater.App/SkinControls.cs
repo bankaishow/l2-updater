@@ -64,6 +64,7 @@ internal sealed class GoldButton : Button
     {
         var g = e.Graphics;
         Backdrop.Draw(g, this);
+        if (Width < 6 || Height < 6) return; // minimized or collapsed: nothing sensible to draw
         g.SmoothingMode = SmoothingMode.AntiAlias;
         var rect = new RectangleF(0.5f, 0.5f, Width - 2f, Height - 2f);
         var cut = Primary ? Math.Min(14f, Height * 0.22f) : Math.Min(9f, Height * 0.22f);
@@ -151,6 +152,7 @@ internal sealed class GoldProgressBar : Control
     {
         var g = e.Graphics;
         Backdrop.Draw(g, this);
+        if (Width < 6 || Height < 6) return; // minimized or collapsed: nothing sensible to draw
         g.SmoothingMode = SmoothingMode.AntiAlias;
         var rect = new RectangleF(0.5f, 0.5f, Width - 2f, Height - 2f);
         var radius = rect.Height / 2f;

@@ -78,6 +78,8 @@ internal sealed partial class MainForm : Form, IBackgroundHost
     // Picture, glass panels, logo and frame are drawn once for the current window size (Skin.RenderBackground).
     public Bitmap GetBackground()
     {
+        // Minimized: the client area is 0×0. Keep the last picture instead of drawing a 1-pixel one.
+        if (_background != null && (ClientSize.Width < 1 || ClientSize.Height < 1)) return _background;
         if (_background == null || _background.Size != ClientSize)
         {
             _background?.Dispose();

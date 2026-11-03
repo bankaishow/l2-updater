@@ -105,12 +105,15 @@ internal static class Skin
         }
 
         // Shade at the bottom (progress texts) and a light one on top (logo, client choice).
+        // A minimized window is 0 pixels high: a gradient over an empty rectangle throws, so tiny sizes get no shading.
         var bottom = new Rectangle(0, (int)(bmp.Height * 0.52), bmp.Width, bmp.Height - (int)(bmp.Height * 0.52));
-        using (var brush = new LinearGradientBrush(bottom, Color.FromArgb(0, 8, 6, 4), Color.FromArgb(215, 8, 6, 4), LinearGradientMode.Vertical))
-            g.FillRectangle(brush, bottom);
+        if (bottom.Width > 0 && bottom.Height > 0)
+            using (var brush = new LinearGradientBrush(bottom, Color.FromArgb(0, 8, 6, 4), Color.FromArgb(215, 8, 6, 4), LinearGradientMode.Vertical))
+                g.FillRectangle(brush, bottom);
         var top = new Rectangle(0, 0, bmp.Width, (int)(bmp.Height * 0.30));
-        using (var brush = new LinearGradientBrush(top, Color.FromArgb(120, 8, 6, 4), Color.FromArgb(0, 8, 6, 4), LinearGradientMode.Vertical))
-            g.FillRectangle(brush, top);
+        if (top.Width > 0 && top.Height > 0)
+            using (var brush = new LinearGradientBrush(top, Color.FromArgb(120, 8, 6, 4), Color.FromArgb(0, 8, 6, 4), LinearGradientMode.Vertical))
+                g.FillRectangle(brush, top);
 
         foreach (var panel in glassPanels)
             DrawGlassPanel(g, panel);

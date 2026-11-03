@@ -622,7 +622,7 @@ internal sealed partial class MainForm
     /// </summary>
     private async Task<bool> RunGuardAsync(ClientInfo client, string folder)
     {
-        var info = GuardRunner.BuildStartInfo(client, folder);
+        var info = GuardRunner.BuildStartInfo(client, folder, AppConfig.BuildVersion);
         if (info == null) return true;
 
         var previousStatus = _status;
@@ -642,6 +642,9 @@ internal sealed partial class MainForm
                     return false;
                 case GuardDecision.BlockRejected:
                     SetStatus(() => T("guard_rejected"), error: true);
+                    return false;
+                case GuardDecision.BlockOutdatedLauncher:
+                    SetStatus(() => T("guard_outdated"), error: true);
                     return false;
                 default:
                     SetStatus(previousStatus);
