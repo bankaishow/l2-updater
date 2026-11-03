@@ -16,6 +16,19 @@ public sealed class SelfUpdater(HttpClient http)
     public const string NewSuffix = ".new";
     public const string OldSuffix = ".old";
 
+    /// <summary>
+    /// True if the running process is a standalone .exe that may replace itself, whatever the file is called
+    /// (browsers rename repeated downloads: "L2Updater (1).exe"). Not an .exe, or the host program
+    /// of a development run (dotnet.exe) → false, so that host is never overwritten.
+    /// </summary>
+    public static bool CanReplaceSelf(string? processPath)
+    {
+        if (string.IsNullOrWhiteSpace(processPath)) return false;
+        var name = processPath[(processPath.LastIndexOfAny(['\\', '/']) + 1)..]; // both separators: the same result on any system
+        return name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(name, "dotnet.exe", StringComparison.OrdinalIgnoreCase);
+    }
+
     /// <summary>True if <paramref name="offered"/> is a valid version higher than <paramref name="current"/>.</summary>
     public static bool IsNewer(string? current, string? offered) =>
         Version.TryParse(current, out var cur) && Version.TryParse(offered, out var off) && off > cur;

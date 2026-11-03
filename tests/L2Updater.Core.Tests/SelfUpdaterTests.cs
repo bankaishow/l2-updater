@@ -17,6 +17,19 @@ public class SelfUpdaterTests
     private static SelfUpdater Updater(FakeServer server) => new(new HttpClient(server));
 
     [Theory]
+    [InlineData(@"C:\Games\L2Updater.exe", true)]
+    [InlineData(@"C:\Games\L2Updater (1).exe", true)]
+    [InlineData(@"E:\x\L2Updater 33.exe", true)]
+    [InlineData(@"E:\x\L2UPDATER3.EXE", true)]
+    [InlineData(@"C:\Program Files\dotnet\dotnet.exe", false)]
+    [InlineData(@"C:\Program Files\dotnet\DOTNET.EXE", false)]
+    [InlineData(@"C:\x\L2Updater.dll", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void Any_exe_name_may_replace_itself_except_dotnet(string? path, bool expected) =>
+        Assert.Equal(expected, SelfUpdater.CanReplaceSelf(path));
+
+    [Theory]
     [InlineData("0.1.5", "0.1.6", true)]
     [InlineData("0.1.5", "0.1.5", false)]
     [InlineData("0.1.5", "0.1.4", false)]

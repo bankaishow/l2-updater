@@ -175,9 +175,8 @@ internal sealed partial class MainForm
     private async Task<bool> SelfUpdateAsync(Manifest manifest)
     {
         var exe = Environment.ProcessPath;
-        if (exe == null || !exe.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
-            || !string.Equals(Path.GetFileName(exe), "L2Updater.exe", StringComparison.OrdinalIgnoreCase))
-            return false;
+        if (!SelfUpdater.CanReplaceSelf(exe)) return false;
+        exe = exe!;
         if (Environment.GetCommandLineArgs().Contains(UpdatedFlag)) return false;
         var info = manifest.Updater;
         if (info == null || !SelfUpdater.IsNewer(AppConfig.BuildVersion, info.Version)) return false;
