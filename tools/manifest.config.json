@@ -5,6 +5,7 @@
       "id": "mythras",
       "title": { "ru": "L2 High Five Legacy", "en": "L2 High Five Legacy" },
       "exe": "system/l2.exe",
+      "guard": "system/l2sec/L2Sec.Agent.exe",
       "args": "",
       "files": "https://dimythras.com/updater/clients/mythras/files.json",
       "base_urls": ["https://dl.dimythras.com/mythras/"],
